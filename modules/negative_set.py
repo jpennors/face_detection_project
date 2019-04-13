@@ -75,5 +75,5 @@ def generate_negative_set(images, labels, set_size=300):
 		if check_overlap(labels, img_id, box):
 			neg_set.append([ img_id, *box ])
 
-	return np.array(neg_set)
+	return np.array(neg_set, dtype=int)
 
