@@ -2,3 +2,6 @@
 test/*
 project_train/*
 Projet.ipynb
+data/
+SY32_P19_Projet_Detection_de_visages.pdf
+__pycache__
