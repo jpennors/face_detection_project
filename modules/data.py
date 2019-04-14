@@ -69,3 +69,19 @@ def save_model(model, path=MODEL_PATH):
 
 def load_test_images():
 	return load_images(path=TEST_PATH)
+
+# Training - Validation sets
+
+def train_valid_sets(images, labels, train_rate=0.75):
+	"""Create training and validation sets"""
+	rnd_indexes = np.random.permutation(len(images))
+	tv_limit = int(len(images) * train_rate)
+	train_indexes = rnd_indexes[:tv_limit]
+	valid_indexes = rnd_indexes[tv_limit:]
+
+	train_images = images[train_indexes]
+	train_labels = labels[np.isin(labels[:,0], train_indexes)]
+	valid_images = images[valid_indexes]
+	valid_labels = labels[np.isin(labels[:,0], valid_indexes)]
+	return train_images, train_labels, valid_images, valid_labels
+
