@@ -5,8 +5,8 @@ from skimage.transform import resize
 import os
 import pickle
 
-LABEL_PATH = 'data/label.txt'
-TRAIN_PATH = 'data/train/'
+LABEL_PATH = 'data/train/label.txt'
+TRAIN_PATH = 'data/train/train/'
 TEST_PATH  = 'data/test/'
 PREDICTION_PATH = 'detection.txt'
 MODEL_PATH = 'model.pickle'
@@ -14,8 +14,9 @@ MODEL_PATH = 'model.pickle'
 # Labels
 
 def load_labels(path=LABEL_PATH):
-	"""Labels are of the following format: [[image_id, x, y, h, l]]"""
-	return np.loadtxt(path, dtype=int)
+	"""Labels are of the following format: [[image_id, x, y, h, l, class]]"""
+	labels = np.loadtxt(path, dtype=int)
+	return np.append(labels, np.ones((labels.shape[0], 1)), axis=1)
 
 def save_prediction(predictions, path=PREDICTION_PATH):
 	"""Save predictions in the following format: [[image_id, x, y, h, l, score]]"""
@@ -36,14 +37,14 @@ def extract_faces(images, labels):
 	faces = []
 	current_idx = None
 	current_img = None
-	for idx, x, y, h, l in labels:
-			# Get image if needed
-			if idx != current_idx:
-					current_idx = idx
-					# current_img = img_as_float(imread(f"./train/{str(idx).zfill(4)}.jpg"))
-					current_img = images[idx-1]
-			# Extract face
-			faces.append(current_img[x:x+h, y:y+l])
+	for idx, x, y, h, l, _ in labels:
+		# Get image if needed
+		if idx != current_idx:
+			current_idx = idx
+			# current_img = img_as_float(imread(f"./train/{str(idx).zfill(4)}.jpg"))
+		current_img = images[int(idx)-1]
+		# Extract face
+		faces.append(current_img[int(x):int(x+h), int(y):int(y+l)])
 
 	return np.array(faces)
 

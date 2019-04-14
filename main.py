@@ -7,6 +7,8 @@ def main():
 	train_images = data.load_images()
 	labels = data.load_labels()
 
+	print(labels)
+
 	print("Generating negative set...")
 	neg_set = generate_negative_set(train_images, labels, set_size=300)
 
