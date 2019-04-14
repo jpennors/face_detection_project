@@ -3,26 +3,26 @@ from random import randint, randrange
 
 def get_box_parameters(labels, display_info=False):
 	"""Compute the average box parameters"""
-	h_mean = np.mean(labels[:,3])
-	l_mean = np.mean(labels[:,4])
+
 	ratio = np.mean(labels[:,3] / labels[:,4])
 
-	if display_info:
-		print("Le ration entre la hauteur et la largeur est de", ratio)
-		print("La hauteur moyenne est de", h_mean)
-		print("La largeur moyenne est de", l_mean)
+	return ratio
 
-	return ratio, int(h_mean), int(l_mean)
-
-def generate_box(img, box_height, box_width):
+def generate_box(img, box_ratio):
 	"""Generate a random box (h, l, x, y)"""
-	#h = randint(50,150)
-	h = box_height
-	# l = int(h/ratio)
-	l = box_width
+
+	img_h = img.shape[0]
+	img_l = img.shape[1]
+
+	if int (img_h / box_ratio) < img_l:
+		h = randint(1, img_h - 1)
+	else :
+		h = randint(1, int(img_l*box_ratio) - 1)
+
+	l = int(h/box_ratio)
 	x = randrange(img.shape[1] - l)
 	y = randrange(img.shape[0] - h)
-
+	
 	return (h,l,x,y)
 
 def check_overlap(labels, img_id, box):
@@ -62,14 +62,14 @@ def generate_negative_set(images, labels, set_size=300):
 	
 	@return     The set of negative examples with class -1
 	"""
-	box_ratio, box_height, box_width = get_box_parameters(labels)
+	box_ratio = get_box_parameters(labels)
 	n_images = len(images)
 
 	neg_set = []
 	while len(neg_set) < set_size :
 		# Generate a fake box in a random image
 		img_id = randrange(n_images)
-		box = generate_box(images[img_id], box_height, box_width)
+		box = generate_box(images[img_id], box_ratio)
 
 		# Check if it doesn't overlap with true faces
 		if check_overlap(labels, img_id, box):
