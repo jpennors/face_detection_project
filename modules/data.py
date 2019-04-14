@@ -5,8 +5,8 @@ from skimage.transform import resize
 import os
 import pickle
 
-LABEL_PATH = 'data/label.txt'
-TRAIN_PATH = 'data/train/'
+LABEL_PATH = 'data/train/label.txt'
+TRAIN_PATH = 'data/train/train/'
 TEST_PATH  = 'data/test/'
 PREDICTION_PATH = 'detection.txt'
 MODEL_PATH = 'model.pickle'
