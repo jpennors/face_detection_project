@@ -1,5 +1,11 @@
 import numpy as np
 from random import randint, randrange
+from .utils import area_rate
+
+
+def check_no_overlap(labels, box):
+	"""Check if the generated box doesn't overlap with any faces"""
+	return all([ area_rate(box, label[1:5]) < 1/2 for label in labels ])
 
 def get_box_parameters(labels, display_info=False):
 	"""Compute the average box parameters"""
@@ -25,34 +31,6 @@ def generate_box(img, box_height, box_width):
 
 	return (h,l,x,y)
 
-def check_overlap(labels, img_id, box):
-	h2, l2, x2, y2 = box
-
-	# Récupère les visages trouvés sur l'image
-	faces = np.where(labels[:,0] == img_id)[0]
-	for face_index in faces:
-		_, x1, y1, h1, l1, _ = labels[face_index]
-		
-		if (((x1 < x2 + l2 and x1 + l1 > x2) or (x2 < x1 + l1 and x2 + l2 > x1))
-		and ((y1 < y2 + h2 and y1 + h1 > y2) or (y2 < y1 + h1 and y2 + h2 > y1))):
-			pass
-		else: 
-			xe_inter = max(x1, x2)
-			ye_inter = max(y1, y2)
-
-			ys_inter = min(y1+h1, y2+h2)
-			xs_inter = min(x1+l1, x2+l2)
-
-			aire_inter = (xs_inter-xe_inter) * (ys_inter-ye_inter)
-			aire_union = ((h1*l1) + (h2*l2)) - aire_inter
-
-			# The box overlap with another face
-			if aire_inter / aire_union > 1/2 :
-				return False
-	# The box doesn't overlap with another face
-	return True
-
-
 def generate_negative_set(images, labels, set_size=300):
 	"""
 	@brief      Generate a set of negative labels from images 
@@ -68,12 +46,14 @@ def generate_negative_set(images, labels, set_size=300):
 	neg_set = []
 	while len(neg_set) < set_size :
 		# Generate a fake box in a random image
-		img_id = randrange(n_images)
-		box = generate_box(images[img_id], box_height, box_width)
+		img_index = randrange(n_images)
+		img_id = img_index + 1
+		box = generate_box(images[img_index], box_height, box_width)
 
 		# Check if it doesn't overlap with true faces
-		if check_overlap(labels, img_id, box):
-			neg_set.append([ img_id, *box ])
+		img_labels = labels[labels[:,0] == img_id]
+		if check_no_overlap(img_labels, box):
+			neg_set.append([ img_id, *box, -1 ])
 
-	return np.append(np.array(neg_set, dtype=int), np.full((set_size,1), -1), axis=1)
+	return np.array(neg_set, dtype=int)
 
