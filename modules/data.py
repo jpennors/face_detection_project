@@ -13,9 +13,12 @@ MODEL_PATH = 'model.pickle'
 
 # Labels
 
-def load_labels(path=LABEL_PATH):
+def load_labels(path=LABEL_PATH, limit=None):
 	"""Labels are of the following format: [[image_id, x, y, h, l, class]]"""
 	labels = np.loadtxt(path, dtype=int)
+	if limit:
+		labels = labels[labels[:,0] <= limit]
+
 	return np.append(labels, np.ones((labels.shape[0], 1)), axis=1)
 
 def save_prediction(predictions, path=PREDICTION_PATH):
@@ -32,9 +35,9 @@ def load_images(path=TRAIN_PATH, limit=None):
 		images.append(img_as_float(imread(path + img_file)))
 	return np.array(images)
 
-def extract_faces(images, labels):
-	# Extract faces
-	faces = []
+def extract_boxes(images, labels):
+	"""Extract all the labels boxes from the images"""
+	boxes = []
 	current_idx = None
 	current_img = None
 	for idx, x, y, h, l, _ in labels:
@@ -44,9 +47,9 @@ def extract_faces(images, labels):
 			# current_img = img_as_float(imread(f"./train/{str(idx).zfill(4)}.jpg"))
 		current_img = images[int(idx)-1]
 		# Extract face
-		faces.append(current_img[int(x):int(x+h), int(y):int(y+l)])
+		boxes.append(current_img[int(x):int(x+h), int(y):int(y+l)])
 
-	return np.array(faces)
+	return np.array(boxes)
 
 def compress_images(images, size):
 	return np.array([ resize(img, size, mode='constant', anti_aliasing=True) for img in images ])
@@ -69,3 +72,19 @@ def save_model(model, path=MODEL_PATH):
 
 def load_test_images():
 	return load_images(path=TEST_PATH)
+
+# Training - Validation sets
+
+def train_valid_sets(images, labels, train_rate=0.75):
+	"""Create training and validation sets"""
+	rnd_indexes = np.random.permutation(len(images))
+	tv_limit = int(len(images) * train_rate)
+	train_indexes = rnd_indexes[:tv_limit]
+	valid_indexes = rnd_indexes[tv_limit:]
+
+	train_images = images[train_indexes]
+	train_labels = labels[np.isin(labels[:,0], train_indexes)]
+	valid_images = images[valid_indexes]
+	valid_labels = labels[np.isin(labels[:,0], valid_indexes)]
+	return train_images, train_labels, valid_images, valid_labels
+

@@ -5,6 +5,10 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import LinearSVC
 from sklearn.svm import SVC
 
+import numpy as np
+from .negative_set import get_box_parameters
+from .window import sliding_windows
+from .data import extract_boxes
 
 BEST_MODEL = 'random_forest'
 
@@ -21,7 +25,9 @@ DEFAULT_PARAMS = {
 	'linear_svc': {},
 	'decision_tree': {},
 	'adaboost': {},
-	'random_forest': {},
+	'random_forest': {
+		'n_estimators': 10,
+	},
 }
 
 DECISION_METHODS = {
@@ -49,3 +55,47 @@ def get_decision(clf, *args, **kwargs):
 	name = DECISION_METHODS[clf.__class__.__name__]
 	method = getattr(clf, name)
 	return method(*args, **kwargs)
+
+
+
+def train(clf, images, labels, vectorize=lambda boxes: boxes, negatives=None, **kwargs):
+	"""
+	@brief      Train a classifier with the boxes labelled on the images
+	
+	@param      clf        The classifier instance
+	@param      images     The images
+	@param      labels     The labels
+	@param      vectorize  The function used to vectorize the extracted boxes of images
+	@param      negatives  The negatives labels
+	"""
+
+	# Extract boxes of the images from the labels
+	all_labels = np.concatenate([labels, negatives]) if negatives is not None else labels
+	boxes = extract_boxes(images, all_labels)
+
+	# Get the training set
+	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
+	y = all_labels[:,5]
+
+	# Finally, train
+	clf.fit(X, y)
+
+
+	
+
+
+
+def predict(clf, images):
+	slide_step = (20, 20)
+	box_size = get_box_parameters(labels)[1:3]
+
+	results = []
+	for image in images:
+		for img in down(image):
+			windows = slide_windows(image, box_size, slide_step, downscale_step=0)
+			# TODO
+			predictions = clf.predict(windows[:,2])
+			results.append(filter_window_results(predictions))
+
+	return all_boxes
+

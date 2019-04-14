@@ -16,16 +16,15 @@ def get_shape_stats(shapes, display_info=False):
 
 	return r_mean, int(h_mean), int(l_mean), r_std, h_std, l_std
 
+
 # Intersection area functions
 # A box is like this [ x, y, h, l ]
 def area(box):
 	"""Compute are of a box like this [x, y, h, l]"""
 	return box[2] * box[3]
 
-
-def area_between(box_1, box_2):
+def cover_aera(box_1, box_2):
 	"""Compute overlap between two boxes like this [x, y, h, l]"""
-
 	# s: start, e: end
 	xs_1, ys_1, h1, l1 = box_1
 	xs_2, ys_2, h2, l2 = box_2
@@ -41,10 +40,9 @@ def area_between(box_1, box_2):
 	ye = min(ye_1, ye_2)
 	return (xe - xs) * (ye - ys)
 
-
 def area_rate(box_1, box_2):
 	"""Compute are rate between two boxes like this [x,y,h, l]"""
-	a_in = area_between(box_1, box_2)
+	a_in = cover_aera(box_1, box_2)
 	if a_in == 0:
 		return 0
 	return a_in / (area(box_1) + area(box_2) - a_in)
