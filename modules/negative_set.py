@@ -23,7 +23,7 @@ def generate_box(img, box_ratio):
 	l = int(h/box_ratio)
 	x = randrange(img_h - h)
 	y = randrange(img_l - l)
-	
+
 	return x, y, h, l
 
 def generate_negative_set(images, labels, set_size=300):
