@@ -1,6 +1,23 @@
+import numpy as np
+
+def get_shape_stats(shapes, display_info=False):
+	"""Compute statistics about image or box shapes [[h, l]]"""
+	h_col = shapes[:,0]
+	l_col = shapes[:,1]
+	r_col = h_col / l_col
+	h_mean, h_std = np.mean(h_col), np.std(h_col)
+	l_mean, l_std = np.mean(l_col), np.std(l_col)
+	r_mean, r_std = np.mean(r_col), np.std(r_col)
+
+	if display_info:
+		print(f"Ration moyen h/l: {r_mean:6.2f} +/- {r_std:5.2f}")
+		print(f"Hauteur moyenne : {h_mean:6.2f} +/- {h_std:5.2f}")
+		print(f"Largeur moyenne : {l_mean:6.2f} +/- {l_std:5.2f}")
+
+	return r_mean, int(h_mean), int(l_mean), r_std, h_std, l_std
+
 # Intersection area functions
 # A box is like this [ x, y, h, l ]
-
 def area(box):
 	return box[2] * box[3]
 

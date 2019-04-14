@@ -1,35 +1,32 @@
 import numpy as np
 from random import randint, randrange
-from .utils import area_rate
+from .utils import area_rate, get_shape_stats
 
 
 def check_no_overlap(labels, box):
 	"""Check if the generated box doesn't overlap with any faces"""
 	return all([ area_rate(box, label[1:5]) < 1/2 for label in labels ])
 
-def get_box_parameters(labels, display_info=False):
+def get_box_parameters(labels):
 	"""Compute the average box parameters"""
-	h_mean = np.mean(labels[:,3])
-	l_mean = np.mean(labels[:,4])
-	ratio = np.mean(labels[:,3] / labels[:,4])
+	return get_shape_stats(labels[:,(3,4)])
 
-	if display_info:
-		print("Le ration entre la hauteur et la largeur est de", ratio)
-		print("La hauteur moyenne est de", h_mean)
-		print("La largeur moyenne est de", l_mean)
+def generate_box(img, box_ratio):
+	"""Generate a random box (x, y, h, l)"""
+	img_h, img_l = img.shape[:2]
 
-	return ratio, int(h_mean), int(l_mean)
+	# h = box_h + randint(-)
 
-def generate_box(img, box_height, box_width):
-	"""Generate a random box (h, l, x, y)"""
-	#h = randint(50,150)
-	h = box_height
-	# l = int(h/ratio)
-	l = box_width
-	x = randrange(img.shape[1] - l)
-	y = randrange(img.shape[0] - h)
+	if int(img_h / box_ratio) < img_l:
+		h = randint(1, img_h - 1)
+	else :
+		h = randint(1, int(img_l*box_ratio) - 1)
 
-	return (h,l,x,y)
+	l = int(h/box_ratio)
+	x = randrange(img_l - l)
+	y = randrange(img_h - h)
+	
+	return x, y, h, l
 
 def generate_negative_set(images, labels, set_size=300):
 	"""
@@ -40,7 +37,7 @@ def generate_negative_set(images, labels, set_size=300):
 	
 	@return     The set of negative examples with class -1
 	"""
-	box_ratio, box_height, box_width = get_box_parameters(labels)
+	box_ratio = get_box_parameters(labels)[0]
 	n_images = len(images)
 
 	neg_set = []
@@ -48,7 +45,7 @@ def generate_negative_set(images, labels, set_size=300):
 		# Generate a fake box in a random image
 		img_index = randrange(n_images)
 		img_id = img_index + 1
-		box = generate_box(images[img_index], box_height, box_width)
+		box = generate_box(images[img_index], box_ratio)
 
 		# Check if it doesn't overlap with true faces
 		img_labels = labels[labels[:,0] == img_id]

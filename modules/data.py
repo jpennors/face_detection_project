@@ -5,8 +5,8 @@ from skimage.transform import resize
 import os
 import pickle
 
-LABEL_PATH = 'data/train/label.txt'
-TRAIN_PATH = 'data/train/train/'
+LABEL_PATH = 'data/label.txt'
+TRAIN_PATH = 'data/train/'
 TEST_PATH  = 'data/test/'
 PREDICTION_PATH = 'detection.txt'
 MODEL_PATH = 'model.pickle'
@@ -60,3 +60,9 @@ def load_model(path=MODEL_PATH):
 def save_model(model, path=MODEL_PATH):
 	"""Save model in a pickle file"""
 	return pickle.dump(open(path, 'wb'), model)
+
+
+# Test set
+
+def load_test_images():
+	return load_images(path=TEST_PATH)
