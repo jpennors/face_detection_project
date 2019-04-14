@@ -60,3 +60,9 @@ def load_model(path=MODEL_PATH):
 def save_model(model, path=MODEL_PATH):
 	"""Save model in a pickle file"""
 	return pickle.dump(open(path, 'wb'), model)
+
+
+# Test set
+
+def load_test_images():
+	return load_images(path=TEST_PATH)
