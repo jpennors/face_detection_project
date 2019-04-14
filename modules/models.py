@@ -58,15 +58,17 @@ def get_decision(clf, *args, **kwargs):
 
 
 
-def train(clf, images, labels, vectorize=lambda boxes: boxes, negatives=None, **kwargs):
+def train(clf, images, labels, vectorize, negatives=None, **kwargs):
 	"""
 	@brief      Train a classifier with the boxes labelled on the images
 	
-	@param      clf        The classifier instance
-	@param      images     The images
-	@param      labels     The labels
-	@param      vectorize  The function used to vectorize the extracted boxes of images
-	@param      negatives  The negatives labels
+	@param      clf             The classifier instance
+	@param      images          The images
+	@param      labels          The labels
+	@param      vectorize       The function used to vectorize the extracted boxes of images
+	@param      vectorize_args  Arguments to be passed to the vectorize function
+															in addition to the boxes
+	@param      negatives       The negatives labels
 	"""
 
 	# Extract boxes of the images from the labels
@@ -80,22 +82,23 @@ def train(clf, images, labels, vectorize=lambda boxes: boxes, negatives=None, **
 	# Finally, train
 	clf.fit(X, y)
 
-
-	
-
-
-
-def predict(clf, images):
-	slide_step = (20, 20)
-	box_size = get_box_parameters(labels)[1:3]
+def predict(clf, images, box_size, vectorize, **kwargs):
+	# Get params
+	slide_step = kwargs.get('slide_step', (20, 20))
+	downscale_step = kwargs.get('downscale_step', 0)
 
 	results = []
-	for image in images:
-		for img in down(image):
-			windows = slide_windows(image, box_size, slide_step, downscale_step=0)
-			# TODO
-			predictions = clf.predict(windows[:,2])
-			results.append(filter_window_results(predictions))
+	for img_index, image in enumerate(images):
+		for img in (image):
+			coordinates, windows = sliding_windows(image, box_size, slide_step, downscale_step)
+
+			import pdb; pdb.set_trace()
+			X = vectorize(windows, *kwargs.get('vectorize_args', []))
+			y = clf.predict(X)
+
+			y = filter_window_results(coordinates, y)
+
+			results.append([img, predictions])
 
 	return all_boxes
 

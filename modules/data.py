@@ -40,13 +40,14 @@ def extract_boxes(images, labels):
 	boxes = []
 	current_idx = None
 	current_img = None
-	for idx, x, y, h, l, _ in labels:
+	for img_id, x, y, h, l, _ in labels:
 		# Get image if needed
-		if idx != current_idx:
-			current_idx = idx
-			# current_img = img_as_float(imread(f"./train/{str(idx).zfill(4)}.jpg"))
-		current_img = images[int(idx)-1]
-		# Extract face
+		if img_id != current_idx:
+			current_idx = img_id
+			# current_img = img_as_float(imread(f"./train/{str(img_id).zfill(4)}.jpg"))
+			current_img = images[int(img_id)-1]
+
+		# Extract box
 		boxes.append(current_img[int(x):int(x+h), int(y):int(y+l)])
 
 	return np.array(boxes)
@@ -78,10 +79,11 @@ def train_valid_sets(images, labels, train_rate=0.75):
 	tv_limit = int(len(images) * train_rate)
 	train_indexes = rnd_indexes[:tv_limit]
 	valid_indexes = rnd_indexes[tv_limit:]
+	label_corrected_ids = labels[:,0] - 1
 
 	train_images = images[train_indexes]
-	train_labels = labels[np.isin(labels[:,0], train_indexes)]
+	train_labels = labels[np.isin(label_corrected_ids, train_indexes)]
 	valid_images = images[valid_indexes]
-	valid_labels = labels[np.isin(labels[:,0], valid_indexes)]
+	valid_labels = labels[np.isin(label_corrected_ids, valid_indexes)]
 	return train_images, train_labels, valid_images, valid_labels
 

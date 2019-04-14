@@ -75,6 +75,9 @@ def sliding_windows(img, box_size, step=DEFAULT_SLIDE_STEP, downscale_step=DEFAU
 					coordinates.append([x, y])
 					windows.append(window)
 
+	return np.array(coordinates), np.array(windows)
+
+	# TODO Useless ?
 	coordinates = np.array(coordinates)
 	windows = np.array(windows, ndmin=2)	
 	return np.concatenate([coordinates, windows.transpose()], axis=1)
