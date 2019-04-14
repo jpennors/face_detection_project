@@ -18,9 +18,9 @@ def generate_box(img, box_ratio):
 	# h = box_h + randint(-)
 
 	if int(img_h / box_ratio) < img_l:
-		h = randint(1, img_h - 1)
+		h = randint(40, img_h - 1)
 	else :
-		h = randint(1, int(img_l*box_ratio) - 1)
+		h = randint(40, int(img_l*box_ratio) - 1)
 
 	l = int(h/box_ratio)
 	x = randrange(img_l - l)

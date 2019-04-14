@@ -15,11 +15,14 @@ def down_image_pyramid(img, step=DEFAULT_DOWNSCALE_STEP, min_height=100, min_wid
 
 	@return     Generator of downscaled images
 	"""
-	assert 0 < step
+	assert 0 <= step
 	yield img
 	h, l = img.shape[:2]
 
-	if step < 1:
+	if step == 0:
+		# Yield only the original image
+		return None
+	elif step < 1:
 		# Downscale by percent
 		r_min = int(min(min_height / h, min_width / l) * 100)
 		step = int(step * 100)
@@ -39,22 +42,26 @@ def down_image_pyramid(img, step=DEFAULT_DOWNSCALE_STEP, min_height=100, min_wid
 			l = int(h / ratio)
 			yield resize(img, (h, l), mode='constant', anti_aliasing=True)
 
-def sliding_window(img, step=DEFAULT_SLIDE_STEP, downscale_step=DEFAULT_DOWNSCALE_STEP):
+def sliding_windows(img, box_size, step=DEFAULT_SLIDE_STEP, downscale_step=DEFAULT_DOWNSCALE_STEP):
 	"""
 	@brief		Slide accros an image and pick window region
 
 	@param		img		Image
 
-	@return		Set of window regions
+	@return		Set of windows of the following shape [[x, y, window]]
 	"""
 	if type(step) in (int, float):
 		step = (step, step)
-	assert len(step) == 2
+	if len(step) != 2:
+		raise ValueError("There must be two values for the step")
+
 	step_h, step_l = step
+	box_h, box_l = box_size
+	if step_h >= box_h or step_l >= box_l:
+		raise ValueError("The steps must be less than the box size")
 
-
+	coordinates = []
 	windows = []
-
 	for scaled_img in down_image_pyramid(img, step=downscale_step):
 		img_h, img_l = scaled_img.shape[:2]
 		# TODO shift x, y ?
@@ -64,6 +71,10 @@ def sliding_window(img, step=DEFAULT_SLIDE_STEP, downscale_step=DEFAULT_DOWNSCAL
 
 				# TODO Comment prendre le dernier ?
 				if x + step_h < img_h and y + step_l < img_l:
-					windows.append([ x, y, scaled_img[y:y+step_h, x:x+step_l] ])
+					window = scaled_img[x:x+box_h, y:y+box_l]
+					coordinates.append([x, y])
+					windows.append(window)
 
-	return np.array(windows)
+	coordinates = np.array(coordinates)
+	windows = np.array(windows, ndmin=2)	
+	return np.concatenate([coordinates, windows.transpose()], axis=1)

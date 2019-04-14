@@ -35,9 +35,9 @@ def load_images(path=TRAIN_PATH, limit=None):
 		images.append(img_as_float(imread(path + img_file)))
 	return np.array(images)
 
-def extract_faces(images, labels):
-	# Extract faces
-	faces = []
+def extract_boxes(images, labels):
+	"""Extract all the labels boxes from the images"""
+	boxes = []
 	current_idx = None
 	current_img = None
 	for idx, x, y, h, l, _ in labels:
@@ -47,9 +47,9 @@ def extract_faces(images, labels):
 			# current_img = img_as_float(imread(f"./train/{str(idx).zfill(4)}.jpg"))
 		current_img = images[int(idx)-1]
 		# Extract face
-		faces.append(current_img[int(x):int(x+h), int(y):int(y+l)])
+		boxes.append(current_img[int(x):int(x+h), int(y):int(y+l)])
 
-	return np.array(faces)
+	return np.array(boxes)
 
 def compress(images, size):
 	return np.array([ resize(img, size, mode='constant', anti_aliasing=True) for img in images ])
