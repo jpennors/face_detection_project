@@ -4,6 +4,35 @@ import numpy as np
 DEFAULT_DOWNSCALE_STEP = 50 # Downscale by 50px
 DEFAULT_SLIDE_STEP = (20, 20)
 
+def extract_boxes(images, labels, box_size):
+	"""
+	Extract all the labels boxes from the images in the same shape
+	"""
+	boxes = []
+	current_idx = None
+	current_img = None
+	for img_id, x, y, h, l, _ in labels:
+		# Get image if needed
+		if img_id != current_idx:
+			current_idx = img_id
+			# current_img = img_as_float(imread(f"./train/{str(img_id).zfill(4)}.jpg"))
+			current_img = images[int(img_id)-1]
+
+		# Extract box
+		box = current_img[int(x):int(x+h), int(y):int(y+l)]
+		box = compress_image(box, box_size)
+		boxes.append(box)
+
+
+	boxes =  np.array(boxes)
+	if boxes.shape != 4:
+		boxes
+
+	return boxes
+
+def compress_image(img, size):
+	return resize(img, size, mode='constant', anti_aliasing=True)
+
 def down_image_pyramid(img, step=DEFAULT_DOWNSCALE_STEP, min_height=100, min_width=100):
 	"""
 	@brief      Generate resized image by decreasing the height of 'step' px
@@ -70,14 +99,9 @@ def sliding_windows(img, box_size, step=DEFAULT_SLIDE_STEP, downscale_step=DEFAU
 			for y in range(0, img_l, step_l):
 
 				# TODO Comment prendre le dernier ?
-				if x + step_h < img_h and y + step_l < img_l:
+				if x + step_h + box_h < img_h and y + step_l + box_l < img_l:
 					window = scaled_img[x:x+box_h, y:y+box_l]
 					coordinates.append([x, y])
 					windows.append(window)
 
 	return np.array(coordinates), np.array(windows)
-
-	# TODO Useless ?
-	coordinates = np.array(coordinates)
-	windows = np.array(windows, ndmin=2)	
-	return np.concatenate([coordinates, windows.transpose()], axis=1)

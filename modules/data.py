@@ -35,32 +35,6 @@ def load_images(path=TRAIN_PATH, limit=None):
 		images.append(img_as_float(imread(path + img_file)))
 	return np.array(images)
 
-def extract_boxes(images, labels):
-	"""Extract all the labels boxes from the images"""
-	boxes = []
-	current_idx = None
-	current_img = None
-	for img_id, x, y, h, l, _ in labels:
-		# Get image if needed
-		if img_id != current_idx:
-			current_idx = img_id
-			# current_img = img_as_float(imread(f"./train/{str(img_id).zfill(4)}.jpg"))
-			current_img = images[int(img_id)-1]
-
-		# Extract box
-		i = current_img[int(x):int(x+h), int(y):int(y+l)]
-		if not i.shape:
-			import pdb; pdb.set_trace()
-		boxes.append(i)
-
-	return np.array(boxes)
-
-def compress_images(images, size):
-	return np.array([ resize(img, size, mode='constant', anti_aliasing=True) for img in images ])
-
-def compress_image(img,size):
-	return resize(img, size, mode='constant', anti_aliasing=True)
-
 # Models
 
 def load_model(path=MODEL_PATH):

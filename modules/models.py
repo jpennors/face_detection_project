@@ -7,8 +7,7 @@ from sklearn.svm import SVC
 
 import numpy as np
 from .negative_set import get_box_parameters
-from .window import sliding_windows
-from .data import extract_boxes
+from .window import extract_boxes, sliding_windows
 
 BEST_MODEL = 'random_forest'
 
@@ -38,7 +37,7 @@ DECISION_METHODS = {
 	'RandomForestClassifier': 'predict_proba',
 }
 
-def create_model(class_name=BEST_MODEL, *args, **params):
+def create_model(class_name=BEST_MODEL, params=None):
 	"""Easy constructor for models with default optimized params"""
 	if class_name not in MODELS:
 		raise NotImplementedError(
@@ -48,7 +47,7 @@ def create_model(class_name=BEST_MODEL, *args, **params):
 	if not params:
 		params = DEFAULT_PARAMS[class_name]
 
-	return MODELS[class_name](*args, **params)
+	return MODELS[class_name](**params)
 
 def get_decision(clf, *args, **kwargs):
 	"""Get the decision function of a classifier"""
@@ -58,7 +57,7 @@ def get_decision(clf, *args, **kwargs):
 
 
 
-def train(clf, images, labels, vectorize, negatives=None, **kwargs):
+def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	"""
 	@brief      Train a classifier with the boxes labelled on the images
 	
@@ -71,7 +70,7 @@ def train(clf, images, labels, vectorize, negatives=None, **kwargs):
 	@param      negatives       The negatives labels
 	"""
 	# Extract boxes of the images from the labels
-	boxes = extract_boxes(images, labels)
+	boxes = extract_boxes(images, labels, box_size)
 
 	# Get the training set
 	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
@@ -80,8 +79,8 @@ def train(clf, images, labels, vectorize, negatives=None, **kwargs):
 	# Finally, train
 	clf.fit(X, y)
 
-def try_accuracy(clf, images, labels, vectorize, negatives=None, **kwargs):
-	boxes = extract_boxes(images, labels)
+def accuracy(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
+	boxes = extract_boxes(images, labels, box_size)
 
 	# Get the training set
 	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
@@ -101,6 +100,7 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 
 			# Get the set and predict
 			X = vectorize(windows, *kwargs.get('vectorize_args', []))
+			import pdb; pdb.set_trace()
 			y = get_decision(clf, X)
 			print(y[:20])
 
