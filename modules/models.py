@@ -58,7 +58,7 @@ def get_decision(clf, *args, **kwargs):
 
 
 
-def train(clf, images, labels, vectorize=lambda boxes: boxes, negatives=None):
+def train(clf, images, labels, vectorize=lambda boxes: boxes, negatives=None, **kwargs):
 	"""
 	@brief      Train a classifier with the boxes labelled on the images
 	
@@ -74,7 +74,7 @@ def train(clf, images, labels, vectorize=lambda boxes: boxes, negatives=None):
 	boxes = extract_boxes(images, all_labels)
 
 	# Get the training set
-	X = vectorize(boxes)
+	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
 	y = all_labels[:,5]
 
 	# Finally, train

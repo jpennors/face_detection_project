@@ -16,11 +16,11 @@ def main():
 	neg_set = generate_negative_set(images, labels, set_size=LIMIT)
 
 	# Fake vectorize function
-	def fake_vect(images):
-		return np.array([ resize(img, box_size, mode='constant', anti_aliasing=True).flatten()[:5000] for img in images ])
+	def fake_vect(images, size):
+		return np.array([ resize(img, size, mode='constant', anti_aliasing=True).flatten()[:5000] for img in images ])
 
 	print("Training...")
-	models.train(clf, images, labels, vectorize=fake_vect, negatives=None)
+	models.train(clf, images, labels, vectorize=fake_vect, negatives=None, vectorize_args=[box_size])
 
 
 
