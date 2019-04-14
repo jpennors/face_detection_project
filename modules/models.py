@@ -5,6 +5,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import LinearSVC
 from sklearn.svm import SVC
 
+from .negative_set import generate_negative_set
+
 
 BEST_MODEL = 'random_forest'
 
@@ -49,3 +51,22 @@ def get_decision(clf, *args, **kwargs):
 	name = DECISION_METHODS[clf.__class__.__name__]
 	method = getattr(clf, name)
 	return method(*args, **kwargs)
+
+
+def train(clf, images, labels, negatives=None):
+	
+	for image in images:
+		pass
+
+
+
+def predict(clf, images):
+	all_boxes = []
+	for image in images:
+		for img in down(image):
+			boxes = slide_window(clf, img, step=DEFAULT_STEP, threshold=0.2)
+			boxes = filter_cover_boxes(boxes)
+			all_boxes.append(boxes)
+
+	return all_boxes
+

@@ -1,12 +1,10 @@
 from skimage.transform import resize
 import numpy as np
 
-DEFAULT_STEP = 50 # Downscale by 50px
+DEFAULT_DOWNSCALE_STEP = 50 # Downscale by 50px
+DEFAULT_SLIDE_STEP = (20, 20)
 
-WIDTH_STEP = 20
-HEIGHT_STEP = 20
-
-def down_image_pyramid(img, step=DEFAULT_STEP, min_height=100, min_width=100):
+def down_image_pyramid(img, step=DEFAULT_DOWNSCALE_STEP, min_height=100, min_width=100):
 	"""
 	@brief      Generate resized image by decreasing the height of 'step' px
 
@@ -41,25 +39,31 @@ def down_image_pyramid(img, step=DEFAULT_STEP, min_height=100, min_width=100):
 			l = int(h / ratio)
 			yield resize(img, (h, l), mode='constant', anti_aliasing=True)
 
-
-def sliding_window(img):
+def sliding_window(img, step=DEFAULT_SLIDE_STEP, downscale_step=DEFAULT_DOWNSCALE_STEP):
 	"""
 	@brief		Slide accros an image and pick window region
 
-	@param		Image
+	@param		img		Image
 
 	@return		Set of window regions
 	"""
+	if type(step) in (int, float):
+		step = (step, step)
+	assert len(step) == 2
+	step_h, step_l = step
 
-	window_region = []
 
-	for scaled_img in down_image_pyramid(img):
-		
-		for y in range(0, scaled_img.shape[0], HEIGHT_STEP):
+	windows = []
 
-			for x in range(0, scaled_img.shape[1], WIDTH_STEP):
+	for scaled_img in down_image_pyramid(img, step=downscale_step):
+		img_h, img_l = scaled_img.shape[:2]
+		# TODO shift x, y ?
 
-				if x + WIDTH_STEP < scaled_img.shape[1] and y + HEIGHT_STEP < scaled_img.shape[0]:
-					window_region.append(scaled_img[y:y+HEIGHT_STEP, x:x+WIDTH_STEP])
+		for x in range(0, img_h, step_h):
+			for y in range(0, img_l, step_l):
 
-	return np.array(window_region)
+				# TODO Comment prendre le dernier ?
+				if x + step_h < img_h and y + step_l < img_l:
+					windows.append([ x, y, scaled_img[y:y+step_h, x:x+step_l] ])
+
+	return np.array(windows)

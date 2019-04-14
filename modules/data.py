@@ -13,9 +13,12 @@ MODEL_PATH = 'model.pickle'
 
 # Labels
 
-def load_labels(path=LABEL_PATH):
+def load_labels(path=LABEL_PATH, limit=None):
 	"""Labels are of the following format: [[image_id, x, y, h, l, class]]"""
 	labels = np.loadtxt(path, dtype=int)
+	if limit:
+		labels = labels[labels[:,0] <= limit]
+
 	return np.append(labels, np.ones((labels.shape[0], 1)), axis=1)
 
 def save_prediction(predictions, path=PREDICTION_PATH):
