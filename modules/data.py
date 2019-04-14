@@ -48,8 +48,11 @@ def extract_faces(images, labels):
 
 	return np.array(faces)
 
-def compress(images, size):
+def compress_images(images, size):
 	return np.array([ resize(img, size, mode='constant', anti_aliasing=True) for img in images ])
+
+def compress_image(img,size):
+	return resize(img, size, mode='constant', anti_aliasing=True)
 
 # Models
 
