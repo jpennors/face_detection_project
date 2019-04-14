@@ -31,7 +31,7 @@ def check_overlap(labels, img_id, box):
 	# Récupère les visages trouvés sur l'image
 	faces = np.where(labels[:,0] == img_id)[0]
 	for face_index in faces:
-		_, x1, y1, h1, l1, _ = labels[face_index]
+		_, x1, y1, h1, l1 = labels[face_index]
 		
 		if (((x1 < x2 + l2 and x1 + l1 > x2) or (x2 < x1 + l1 and x2 + l2 > x1))
 		and ((y1 < y2 + h2 and y1 + h1 > y2) or (y2 < y1 + h1 and y2 + h2 > y1))):
@@ -60,7 +60,7 @@ def generate_negative_set(images, labels, set_size=300):
 	@param      images  The images
 	@param      labels  The labels
 	
-	@return     The set of negative examples with class -1
+	@return     The set of negative examples
 	"""
 	box_ratio, box_height, box_width = get_box_parameters(labels)
 	n_images = len(images)
@@ -75,5 +75,5 @@ def generate_negative_set(images, labels, set_size=300):
 		if check_overlap(labels, img_id, box):
 			neg_set.append([ img_id, *box ])
 
-	return np.append(np.array(neg_set, dtype=int), np.full((set_size,1), -1), axis=1)
+	return np.array(neg_set, dtype=int)
 
