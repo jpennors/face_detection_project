@@ -48,7 +48,10 @@ def extract_boxes(images, labels):
 			current_img = images[int(img_id)-1]
 
 		# Extract box
-		boxes.append(current_img[int(x):int(x+h), int(y):int(y+l)])
+		i = current_img[int(x):int(x+h), int(y):int(y+l)]
+		if not i.shape:
+			import pdb; pdb.set_trace()
+		boxes.append(i)
 
 	return np.array(boxes)
 
@@ -73,17 +76,13 @@ def load_test_images():
 
 # Training - Validation sets
 
-def train_valid_sets(images, labels, train_rate=0.75):
+def train_valid_sets(n_images, labels, train_rate=0.75):
 	"""Create training and validation sets"""
-	rnd_indexes = np.random.permutation(len(images))
-	tv_limit = int(len(images) * train_rate)
-	train_indexes = rnd_indexes[:tv_limit]
-	valid_indexes = rnd_indexes[tv_limit:]
+	rnd_indexes = np.random.permutation(n_images)
+	tv_limit = int(n_images * train_rate)
 	label_corrected_ids = labels[:,0] - 1
 
-	train_images = images[train_indexes]
-	train_labels = labels[np.isin(label_corrected_ids, train_indexes)]
-	valid_images = images[valid_indexes]
-	valid_labels = labels[np.isin(label_corrected_ids, valid_indexes)]
-	return train_images, train_labels, valid_images, valid_labels
+	train_labels = labels[np.isin(label_corrected_ids, rnd_indexes[:tv_limit])]
+	valid_labels = labels[np.isin(label_corrected_ids, rnd_indexes[tv_limit:])]
+	return train_labels, valid_labels
 

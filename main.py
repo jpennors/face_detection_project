@@ -14,24 +14,26 @@ def main():
 	labels = data.load_labels(limit=LIMIT)
 	box_size = get_box_parameters(labels)[1:3]
 
-	print("Creating train & validation sets...")
-	# train_images, train_labels, valid_images, valid_labels = data.train_valid_sets(images, labels)
-	# TODO : Pb of index with sets and labels
-	train_images = valid_images = images
-	train_labels = valid_labels = labels
-
 	print("Generating negative set...")
-	neg_set = generate_negative_set(images, labels, set_size=LIMIT)
+	negatives = generate_negative_set(images, labels, set_size=LIMIT)
+	all_labels = np.concatenate([labels, negatives])
+
+	print("Creating train & validation sets...")
+	train_labels, valid_labels = data.train_valid_sets(len(images), all_labels)
 
 	# Fake vectorize function
 	def fake_vect(images, size):
-		return np.array([ resize(img, size, mode='constant', anti_aliasing=True).flatten()[:5000] for img in images ])
+		return np.array([ resize(img, size, mode='constant', anti_aliasing=True).flatten()[:500] for img in images ])
 
 	print("Training...")
-	models.train(clf, train_images, train_labels, vectorize=fake_vect, negatives=None, vectorize_args=[box_size])
+	models.train(clf, images, train_labels, vectorize=fake_vect, vectorize_args=[box_size])
+
+	print("Get validation accuracy...")
+	accuracy = models.try_accuracy(clf, images, valid_labels, vectorize=fake_vect, vectorize_args=[box_size])
+	print("Accuracy:", accuracy)
 
 	print("Predicting...")
-	predictions = models.predict(clf, valid_images, box_size, vectorize=fake_vect, vectorize_args=[box_size])
+	predictions = models.predict(clf, images, box_size, vectorize=fake_vect, vectorize_args=[box_size])
 
 
 	print("Test now !")

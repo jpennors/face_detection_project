@@ -15,16 +15,14 @@ def generate_box(img, box_ratio):
 	"""Generate a random box (x, y, h, l)"""
 	img_h, img_l = img.shape[:2]
 
-	# h = box_h + randint(-)
-
 	if int(img_h / box_ratio) < img_l:
 		h = randint(40, img_h - 1)
 	else :
 		h = randint(40, int(img_l*box_ratio) - 1)
 
 	l = int(h/box_ratio)
-	x = randrange(img_l - l)
-	y = randrange(img_h - h)
+	x = randrange(img_h - h)
+	y = randrange(img_l - l)
 	
 	return x, y, h, l
 

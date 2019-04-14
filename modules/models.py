@@ -26,7 +26,7 @@ DEFAULT_PARAMS = {
 	'decision_tree': {},
 	'adaboost': {},
 	'random_forest': {
-		'n_estimators': 10,
+		'n_estimators': 100,
 	},
 }
 
@@ -70,17 +70,24 @@ def train(clf, images, labels, vectorize, negatives=None, **kwargs):
 															in addition to the boxes
 	@param      negatives       The negatives labels
 	"""
-
 	# Extract boxes of the images from the labels
-	all_labels = np.concatenate([labels, negatives]) if negatives is not None else labels
-	boxes = extract_boxes(images, all_labels)
+	boxes = extract_boxes(images, labels)
 
 	# Get the training set
 	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
-	y = all_labels[:,5]
+	y = labels[:,5]
 
 	# Finally, train
 	clf.fit(X, y)
+
+def try_accuracy(clf, images, labels, vectorize, negatives=None, **kwargs):
+	boxes = extract_boxes(images, labels)
+
+	# Get the training set
+	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
+	y = labels[:,5]
+
+	return clf.score(X, y)
 
 def predict(clf, images, box_size, vectorize, **kwargs):
 	# Get params
@@ -92,10 +99,12 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 		for img in (image):
 			coordinates, windows = sliding_windows(image, box_size, slide_step, downscale_step)
 
-			import pdb; pdb.set_trace()
+			# Get the set and predict
 			X = vectorize(windows, *kwargs.get('vectorize_args', []))
-			y = clf.predict(X)
+			y = get_decision(clf, X)
+			print(y[:20])
 
+			import pdb; pdb.set_trace()
 			y = filter_window_results(coordinates, y)
 
 			results.append([img, predictions])
