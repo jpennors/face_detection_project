@@ -38,8 +38,6 @@ DECISION_METHODS = {
 	'RandomForestClassifier': 'predict_proba',
 }
 
-LIMIT_SCORE = 0.5
-
 def create_model(class_name=BEST_MODEL, params=None):
 	"""Easy constructor for models with default optimized params"""
 	if class_name not in MODELS:
@@ -101,15 +99,12 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 
 		coordinates, windows = sliding_windows(image, box_size, slide_step, downscale_step)
 
-		# Get the set and predict
+		# Get the set and predict scores per class
 		X = vectorize(windows, *kwargs.get('vectorize_args', []))
-		# import pdb; pdb.set_trace()
-		y = get_decision(clf, X)
+		scores = get_decision(clf, X)
 
 		# import pdb; pdb.set_trace()
-		predictions = filter_window_results(coordinates, y, LIMIT_SCORE, index+1)
-		for prediction in predictions:
-			results.append(prediction)
+		predictions = filter_window_results(index+1, coordinates, scores, 0.5)
+		results.extend(predictions)
 			
 	return np.array(results)
-

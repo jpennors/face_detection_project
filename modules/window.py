@@ -4,6 +4,8 @@ from .utils import area_rate
 
 DEFAULT_DOWNSCALE_STEP = 50 # Downscale by 50px
 DEFAULT_SLIDE_STEP = (20, 20)
+LIMIT_SCORE = 0.5
+POSITIVE_CLASS_INDEX = 1
 
 def extract_boxes(images, labels, box_size):
 	"""
@@ -108,28 +110,29 @@ def sliding_windows(img, box_size, step=DEFAULT_SLIDE_STEP, downscale_step=DEFAU
 	return np.array(coordinates), np.array(windows)
 
 
-def filter_window_results(coordinates, predictions, limit, image_id):
+def filter_window_results(img_id, coordinates, predictions, limit=LIMIT_SCORE):
 	"""Retrieve faces positive predictions from all predicitions""" 
 
 	# Keep predictions where face recognition class is higher than limit
-	positive_indices = np.where(predictions[:,1] > limit)
+	positive_indices = np.where(predictions[:,POSITIVE_CLASS_INDEX] > limit)
 
-	positives_predictions = predictions[positive_indices]
-	positives_coordinates = coordinates[positive_indices]
+	positive_predictions = predictions[positive_indices]
+	positive_coordinates = coordinates[positive_indices]
 
-	# Sort remaining predictions
-	sorted_indices = np.argsort(positives_predictions[:,1])[::-1]
+	# Sort remaining predictions by decreasing order
+	sorted_indices = np.argsort(positive_predictions[:,POSITIVE_CLASS_INDEX])[::-1]
 
 	# Remove some boxes based on area rate
 	face_boxes = []
-	removed_boxes = []
+	removed_indices = []
 	for i in sorted_indices:
-		if i not in removed_boxes:
-			x,y,h,l = positives_coordinates[i]
-			face_boxes.append(np.array((image_id,x,y,h,l,positives_predictions[i][1])))
+		if i not in removed_indices:
+			coord = positive_coordinates[i]
+			score = positive_predictions[i,POSITIVE_CLASS_INDEX]
+			face_boxes.append([ img_id, *coord, score ])
 			for j in sorted_indices:
-				if i != j and area_rate(positives_coordinates[i], positives_coordinates[j]) > 1/2 :
-					removed_boxes.append(j)
+				if i != j and area_rate(positive_coordinates[i], positive_coordinates[j]) > 1/2 :
+					removed_indices.append(j)
 
-	return face_boxes
+	return np.array(face_boxes)
 
