@@ -1,5 +1,6 @@
-from skimage.transform import resize
 import numpy as np
+from skimage.transform import resize
+from .utils import area_rate
 
 DEFAULT_DOWNSCALE_STEP = 50 # Downscale by 50px
 DEFAULT_SLIDE_STEP = (20, 20)
@@ -101,7 +102,34 @@ def sliding_windows(img, box_size, step=DEFAULT_SLIDE_STEP, downscale_step=DEFAU
 				# TODO Comment prendre le dernier ?
 				if x + step_h + box_h < img_h and y + step_l + box_l < img_l:
 					window = scaled_img[x:x+box_h, y:y+box_l]
-					coordinates.append([x, y])
+					coordinates.append([x, y, box_h, box_l])
 					windows.append(window)
 
 	return np.array(coordinates), np.array(windows)
+
+
+def filter_window_results(coordinates, predictions, limit):
+	"""Retrieve faces positive predictions from all predicitions""" 
+
+	# Keep predictions where face recognition class is higher than limit
+	positive_indices = np.where(predictions[:,1] > limit)
+
+	positives_predictions = predictions[positive_indices]
+	positives_coordinates = coordinates[positive_indices]
+
+	# Sort remaining predictions
+	sorted_indices = np.argsort(positives_predictions[:,1])[::-1]
+
+	face_boxes = []
+	removed_boxes = []
+
+	for i in sorted_indices:
+		if i not in removed_boxes:
+			x,y,h,l = positives_coordinates[i]
+			face_boxes.append(np.array((x,y,h,l,positives_predictions[i][1])))
+			for j in sorted_indices:
+				if i != j and area_rate(positives_coordinates[i], positives_coordinates[j]) > 1/2 :
+					removed_boxes.append(j)
+
+	return face_boxes
+
