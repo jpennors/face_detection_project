@@ -9,6 +9,7 @@ import numpy as np
 from .negative_set import get_box_parameters
 from .window import extract_boxes, sliding_windows
 from .window import filter_window_results
+from .validation import apply_first_validation
 
 BEST_MODEL = 'random_forest'
 
@@ -60,7 +61,7 @@ def get_decision(clf, *args, **kwargs):
 
 
 
-def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
+def train(clf, images, box_size, train_labels, labels, vectorize, negatives=None, **kwargs):
 	"""
 	@brief      Train a classifier with the boxes labelled on the images
 	
@@ -73,14 +74,32 @@ def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	@param      negatives       The negatives labels
 	"""
 	# Extract boxes of the images from the labels
-	boxes = extract_boxes(images, labels, box_size)
+	boxes = extract_boxes(images, train_labels, box_size)
 
 	# Get the training set
 	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
-	y = labels[:,5]
+	y = train_labels[:,5]
 
 	# Finally, train
 	clf.fit(X, y)
+
+	# Beginning of the second training
+	predictions = predict_training_dataset(clf, images, box_size, vectorize)
+
+	positive_false = apply_first_validation(predictions, labels)
+	print(train_labels)
+	train_labels = np.concatenate([train_labels, positive_false])
+
+	# Extract boxes of the images from the labels
+	boxes = extract_boxes(images, train_labels, box_size)
+
+	# Get the training set
+	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
+	y = train_labels[:,5]
+
+	# Finally, train
+	clf.fit(X, y)
+
 
 def accuracy(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	boxes = extract_boxes(images, labels, box_size)
@@ -91,7 +110,7 @@ def accuracy(clf, images, box_size, labels, vectorize, negatives=None, **kwargs)
 
 	return clf.score(X, y)
 
-def predict(clf, images, box_size, vectorize, **kwargs):
+def predict_training_dataset(clf, images, box_size, vectorize, **kwargs):
 	# Get params
 	slide_step = kwargs.get('slide_step', (20, 20))
 	downscale_step = kwargs.get('downscale_step', 0)
@@ -110,6 +129,34 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 		predictions = filter_window_results(coordinates, y, LIMIT_SCORE, index+1)
 		for prediction in predictions:
 			results.append(prediction)
-			
+
 	return np.array(results)
+
+def predict(clf, images, box_size, test_labels, vectorize, **kwargs):
+
+	boxes = extract_boxes(images, test_labels, box_size)
+
+	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
+
+	scores = get_decision(clf, X)
+
+	good_predictions = 0
+	bad_predictions = 0
+
+	for index, score in enumerate(scores):
+
+		if (score[0] <= LIMIT_SCORE and test_labels[index][5] == -1) or (score[0] > LIMIT_SCORE and test_labels[index][5] == 1) :
+			good_predictions += 1
+		else :
+			bad_predictions += 1
+	print(good_predictions)
+	print(bad_predictions)
+	print(good_predictions/len(scores))
+
+
+
+
+
+
+
 
