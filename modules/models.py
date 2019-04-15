@@ -97,7 +97,7 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 	downscale_step = kwargs.get('downscale_step', 0)
 
 	results = []
-	for img_index, image in enumerate(images):
+	for index, image in enumerate(images):
 
 		coordinates, windows = sliding_windows(image, box_size, slide_step, downscale_step)
 
@@ -107,11 +107,9 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 		y = get_decision(clf, X)
 
 		# import pdb; pdb.set_trace()
-		predictions = filter_window_results(coordinates, y, LIMIT_SCORE)
-
-		print(y)
-
-		results.append([image, predictions])
-
-	return all_boxes
+		predictions = filter_window_results(coordinates, y, LIMIT_SCORE, index+1)
+		for prediction in predictions:
+			results.append(prediction)
+			
+	return np.array(results)
 

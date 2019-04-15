@@ -108,7 +108,7 @@ def sliding_windows(img, box_size, step=DEFAULT_SLIDE_STEP, downscale_step=DEFAU
 	return np.array(coordinates), np.array(windows)
 
 
-def filter_window_results(coordinates, predictions, limit):
+def filter_window_results(coordinates, predictions, limit, image_id):
 	"""Retrieve faces positive predictions from all predicitions""" 
 
 	# Keep predictions where face recognition class is higher than limit
@@ -120,13 +120,13 @@ def filter_window_results(coordinates, predictions, limit):
 	# Sort remaining predictions
 	sorted_indices = np.argsort(positives_predictions[:,1])[::-1]
 
+	# Remove some boxes based on area rate
 	face_boxes = []
 	removed_boxes = []
-
 	for i in sorted_indices:
 		if i not in removed_boxes:
 			x,y,h,l = positives_coordinates[i]
-			face_boxes.append(np.array((x,y,h,l,positives_predictions[i][1])))
+			face_boxes.append(np.array((image_id,x,y,h,l,positives_predictions[i][1])))
 			for j in sorted_indices:
 				if i != j and area_rate(positives_coordinates[i], positives_coordinates[j]) > 1/2 :
 					removed_boxes.append(j)
