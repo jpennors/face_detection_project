@@ -8,6 +8,7 @@ from sklearn.svm import SVC
 import numpy as np
 from .negative_set import get_box_parameters
 from .window import extract_boxes, sliding_windows
+from .window import filter_window_results
 
 BEST_MODEL = 'random_forest'
 
@@ -36,6 +37,8 @@ DECISION_METHODS = {
 	'DecisionTreeClassifier': 'predict_proba',
 	'RandomForestClassifier': 'predict_proba',
 }
+
+LIMIT_SCORE = 0.5
 
 def create_model(class_name=BEST_MODEL, params=None):
 	"""Easy constructor for models with default optimized params"""
@@ -95,19 +98,20 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 
 	results = []
 	for img_index, image in enumerate(images):
-		for img in (image):
-			coordinates, windows = sliding_windows(image, box_size, slide_step, downscale_step)
 
-			# Get the set and predict
-			X = vectorize(windows, *kwargs.get('vectorize_args', []))
-			import pdb; pdb.set_trace()
-			y = get_decision(clf, X)
-			print(y[:20])
+		coordinates, windows = sliding_windows(image, box_size, slide_step, downscale_step)
 
-			import pdb; pdb.set_trace()
-			y = filter_window_results(coordinates, y)
+		# Get the set and predict
+		X = vectorize(windows, *kwargs.get('vectorize_args', []))
+		# import pdb; pdb.set_trace()
+		y = get_decision(clf, X)
 
-			results.append([img, predictions])
+		# import pdb; pdb.set_trace()
+		predictions = filter_window_results(coordinates, y, LIMIT_SCORE)
+
+		print(y)
+
+		results.append([image, predictions])
 
 	return all_boxes
 
