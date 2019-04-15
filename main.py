@@ -1,12 +1,14 @@
 from modules.negative_set import generate_negative_set, get_box_parameters
-from modules import data, models, descriptor_vector
+from modules import data, models, descriptor_vector, validation
 import numpy as np
 from skimage.transform import resize
 
+
 # Params
-LIMIT = 100
-NEG_SIZE = max(min(LIMIT, 100), 300)
-TRAIN_RATE = 0.60
+LIMIT = 300
+# NEG_SIZE = max(min(LIMIT, 100), 300)
+NEG_SIZE = 1000
+TRAIN_RATE = 0.70
 CLASSIFIER = 'random_forest'
 MODEL_PARAMS = {
 	'n_estimators': 100,
@@ -41,18 +43,17 @@ def main():
 	train_labels, valid_labels = data.train_valid_sets(len(images), all_labels)
 
 	print("Training...")
-	models.train(clf, images, box_size, train_labels, **VECTORIZE_PARAMS)
+	models.train(clf, images, box_size, train_labels, labels, **VECTORIZE_PARAMS)
 
-	print("Get validation classification accuracy...")
-	accuracy = models.accuracy(clf, images, box_size, valid_labels, **VECTORIZE_PARAMS)
-	print("  Accuracy:", accuracy)
+	# print("Get validation classification accuracy...")
+	# accuracy = models.accuracy(clf, images, box_size, valid_labels, **VECTORIZE_PARAMS)
+	# print("  Accuracy:", accuracy)
 
 	print("Predicting...")
-	predictions = models.predict(clf, images, box_size, **VECTORIZE_PARAMS)
-
+	models.predict(clf, images, box_size, valid_labels, **VECTORIZE_PARAMS)
 
 	print("Test now !")
-	import pdb; pdb.set_trace()
+	# import pdb; pdb.set_trace()
 
 if __name__ == '__main__':
 	main()
