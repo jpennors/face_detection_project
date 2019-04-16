@@ -4,7 +4,7 @@ from .utils import area_rate, get_shape_stats
 from .data import save_img
 import os
 
-MIN_HEIGHT = 60
+MIN_BOX_HEIGHT = 60
 
 def check_no_overlap(labels, box):
 	"""Check if the generated box doesn't overlap with any faces"""
@@ -18,7 +18,7 @@ def generate_box(img, box_ratio):
 	"""Generate a random box (x, y, h, l)"""
 	img_h, img_l = img.shape[:2]
 
-	h = randint(MIN_HEIGHT, min(img_h - 1, img_l - 1))
+	h = randint(MIN_BOX_HEIGHT, min(img_h - 1, img_l - 1))
 	l = int(h/box_ratio)
 
 	x = randrange(img_h - h)
@@ -67,12 +67,9 @@ def generate_negative_set(images, labels, set_size=300, save=False):
 
 
 def save_negative_set(images, negatives):
-	"""
-		Function to save images from the negative set
-	"""
+	"""Function to save images from the negative set"""
 
 	for i in range(len(negatives)):
-
 		x = negatives[i][1]
 		y = negatives[i][2]
 		h = negatives[i][3]
@@ -85,5 +82,5 @@ def save_negative_set(images, negatives):
 		if not os.path.exists(dir):
 			os.makedirs(dir)
 
-		save_img(dir + "/" + str(i+1) + "-id-" + str(negatives[i][0]) + ".png", negative_img)
+		save_img(f"{dir}/{i+1}-id-{negatives[i][0]}.png", negative_img)
 

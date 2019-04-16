@@ -2,10 +2,11 @@ import numpy as np
 from skimage.transform import resize
 from .utils import area_rate
 
+POSITIVE_CLASS_INDEX = 1
+LIMIT_SCORE = 0.5
+
 DEFAULT_DOWNSCALE_STEP = 50 # Downscale by 50px
 DEFAULT_SLIDE_STEP = (20, 20)
-LIMIT_SCORE = 0.5
-POSITIVE_CLASS_INDEX = 1
 
 def extract_boxes(images, labels, box_size):
 	"""

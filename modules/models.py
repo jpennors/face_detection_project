@@ -7,12 +7,10 @@ from sklearn.svm import SVC
 
 import numpy as np
 from .negative_set import get_box_parameters
-from .window import extract_boxes, sliding_windows
-from .window import filter_window_results
-from .validation import apply_first_validation
+from .window import extract_boxes, sliding_windows, filter_window_results
+from .window import POSITIVE_CLASS_INDEX, LIMIT_SCORE
+from .validation import get_false_positives
 
-POSITIVE_CLASS_INDEX = 1
-LIMIT_SCORE = 0.5
 BEST_MODEL = 'random_forest'
 
 MODELS = {
@@ -61,7 +59,7 @@ def get_decision(clf, *args, **kwargs):
 
 
 
-def train(clf, images, box_size, train_labels, labels, vectorize, negatives=None, **kwargs):
+def train(clf, images, box_size, train_labels, vectorize, negatives=None, **kwargs):
 	"""
 	@brief      Train a classifier with the boxes labelled on the images
 	
@@ -80,24 +78,30 @@ def train(clf, images, box_size, train_labels, labels, vectorize, negatives=None
 	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
 	y = train_labels[:,5]
 
-	# Finally, train
+	# First training with only train_labels and random negatives
+	print("First training...")
 	clf.fit(X, y)
 
-	# Beginning of the second training
-	predictions = predict(clf, images, box_size, vectorize)
+	# Beginning of the second training from the training images
 
-	positive_false = apply_first_validation(predictions, labels)
-	print(train_labels)
+	# TODO Predict all images ???
+	# image_indexes = range(1, len(images)+1)
+	train_images = images #[np.isin(image_indexes, train_labels[:,0])]
+	predictions = predict(clf, train_images, box_size, vectorize)
+
+	positive_false = get_false_positives(predictions, train_labels)
 	train_labels = np.concatenate([train_labels, positive_false])
+	print(f"Adding {len(positive_false)} false positives")
 
-	# Extract boxes of the images from the labels
+	# Extract new boxes of the images from the labels
 	boxes = extract_boxes(images, train_labels, box_size)
 
 	# Get the training set
 	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
 	y = train_labels[:,5]
 
-	# Finally, train
+	# Finally, train again
+	print("Second training...")
 	clf.fit(X, y)
 
 
@@ -134,7 +138,6 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 		X = vectorize(windows, *kwargs.get('vectorize_args', []))
 		scores = get_decision(clf, X)
 
-		# predictions = filter_window_results(coordinates, y, LIMIT_SCORE, index+1)
 		predictions = filter_window_results(index+1, coordinates, scores, LIMIT_SCORE)
 		results.extend(predictions)
 			
@@ -175,7 +178,8 @@ def predict_and_validate(clf, images, box_size, test_labels, vectorize, **kwargs
 		else:
 			results['false_neg' if test_pos else 'true_neg'] += 1
 
-	print(results)
-	print(results['true_pos'] / len(scores))
+	if kwargs.get('display_info', True):
+		print("Prediction results:", results)
+		print(f"Prediction accuracy for faces: {results['true_pos'] / sum(test_labels[:,5] == 1) * 100:.2f}%")
 
 	return results
