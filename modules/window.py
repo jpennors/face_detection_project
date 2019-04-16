@@ -2,9 +2,6 @@ import numpy as np
 from skimage.transform import resize
 from .utils import area_rate
 
-POSITIVE_CLASS_INDEX = 1
-LIMIT_SCORE = 0.5
-
 DEFAULT_DOWNSCALE_STEP = 50 # Downscale by 50px
 DEFAULT_SLIDE_STEP = (20, 20)
 
@@ -111,17 +108,17 @@ def sliding_windows(img, box_size, step=DEFAULT_SLIDE_STEP, downscale_step=DEFAU
 	return np.array(coordinates), np.array(windows)
 
 
-def filter_window_results(img_id, coordinates, predictions, limit=LIMIT_SCORE):
+def filter_window_results(img_id, coordinates, predictions, limit):
 	"""Retrieve faces positive predictions from all predicitions""" 
 
 	# Keep predictions where face recognition class is higher than limit
-	positive_indices = np.where(predictions[:,POSITIVE_CLASS_INDEX] > limit)
+	positive_indices = np.where(predictions[:] > limit)
 
 	positive_predictions = predictions[positive_indices]
 	positive_coordinates = coordinates[positive_indices]
 
 	# Sort remaining predictions by decreasing order
-	sorted_indices = np.argsort(positive_predictions[:,POSITIVE_CLASS_INDEX])[::-1]
+	sorted_indices = np.argsort(positive_predictions[:])[::-1]
 
 	# Remove some boxes based on area rate
 	face_boxes = []
@@ -129,7 +126,7 @@ def filter_window_results(img_id, coordinates, predictions, limit=LIMIT_SCORE):
 	for i in sorted_indices:
 		if i not in removed_indices:
 			coord = positive_coordinates[i]
-			score = positive_predictions[i,POSITIVE_CLASS_INDEX]
+			score = positive_predictions[i]
 			face_boxes.append([ img_id, *coord, score ])
 			for j in sorted_indices:
 				if i != j and area_rate(positive_coordinates[i], positive_coordinates[j]) > 1/2 :

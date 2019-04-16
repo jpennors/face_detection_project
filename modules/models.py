@@ -8,9 +8,9 @@ from sklearn.svm import SVC
 import numpy as np
 from .negative_set import get_box_parameters
 from .window import extract_boxes, sliding_windows, filter_window_results
-from .window import POSITIVE_CLASS_INDEX, LIMIT_SCORE
 from .validation import get_false_positives
 
+LIMIT_SCORE = 0.5
 BEST_MODEL = 'random_forest'
 
 MODELS = {
@@ -51,12 +51,36 @@ def create_model(class_name=BEST_MODEL, params=None):
 
 	return MODELS[class_name](**params)
 
-def get_decision(clf, *args, **kwargs):
-	"""Get the decision function of a classifier"""
+def get_scores(clf, *args, **kwargs):
+	"""Get the decision scores of a classifier for the +1 class"""
 	name = DECISION_METHODS[clf.__class__.__name__]
 	method = getattr(clf, name)
-	return method(*args, **kwargs)
+	scores = method(*args, **kwargs)
 
+	# Only keep the positive, no problem here all are probalities
+	# For DecisionTreeClassifier, RandomForestClassifier
+	if scores.ndim == 2:
+		positive_class_index = np.where(clf.classes_ == 1)[0][0]
+		return scores[:, positive_class_index]
+
+	assert scores.ndim == 1
+	if type(clf) is LinearSVC:
+		# score > 0 implies class +1
+		return (scores / 2) + 0.5
+
+	if type(clf) is AdaBoostClassifier:
+		# score is around +1 and -1
+		return scores - 0.5
+
+	if type(clf) is SVC:
+		kernel = clf.get_params().get('kernel')
+		if kernel == 'linear':
+			# score > 0 implies class +1
+			return (scores / 2) + 0.5
+
+		# TODO Learn more
+
+	return scores
 
 
 def train(clf, images, box_size, train_labels, vectorize, negatives=None, **kwargs):
@@ -104,7 +128,6 @@ def train(clf, images, box_size, train_labels, vectorize, negatives=None, **kwar
 	print("Second training...")
 	clf.fit(X, y)
 
-
 def accuracy(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	boxes = extract_boxes(images, labels, box_size)
 
@@ -136,7 +159,7 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 
 		# Get the set and predict scores per class
 		X = vectorize(windows, *kwargs.get('vectorize_args', []))
-		scores = get_decision(clf, X)
+		scores = get_scores(clf, X)
 
 		predictions = filter_window_results(index+1, coordinates, scores, LIMIT_SCORE)
 		results.extend(predictions)
@@ -159,7 +182,7 @@ def predict_and_validate(clf, images, box_size, test_labels, vectorize, **kwargs
 	boxes = extract_boxes(images, test_labels, box_size)
 
 	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
-	scores = get_decision(clf, X)
+	scores = get_scores(clf, X)
 
 	results = {
 		'true_pos': 0,
@@ -170,7 +193,7 @@ def predict_and_validate(clf, images, box_size, test_labels, vectorize, **kwargs
 
 	# Compute results
 	for index, score in enumerate(scores):
-		pred_pos = score[POSITIVE_CLASS_INDEX] > LIMIT_SCORE
+		pred_pos = score > LIMIT_SCORE
 		test_pos = test_labels[index,5] == 1
 
 		if pred_pos:

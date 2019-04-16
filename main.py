@@ -1,19 +1,19 @@
 from modules.negative_set import generate_negative_set, get_box_parameters
-from modules import data, models, descriptor_vector, validation
+from modules import data, models, descriptor_vector, validation, selection
 import numpy as np
 from skimage.transform import resize
 
 
 # Params
 SAVE_NEGATIVES = False
-LIMIT = 10
-NEG_SIZE = 30
+LIMIT = 100
+NEG_SIZE = 120
 TRAIN_RATE = 0.70
 CLASSIFIER = 'random_forest'
 MODEL_PARAMS = {
 	'n_estimators': 100,
 }
-VECTORIZE_PARAMS = {
+VECTORIZATION_PARAMS = {
 	'vectorize': descriptor_vector.hog,
 	# 'vectorize_args': [box_size],
 }
@@ -32,7 +32,7 @@ def main():
 	print(" ", MODEL_PARAMS)
 	print(" ", LIMIT, "images,", NEG_SIZE, "negatives")
 	print("  box_size:", box_size)
-	print(" ", VECTORIZE_PARAMS)
+	print(" ", VECTORIZATION_PARAMS)
 
 
 	print("Generating negative set...")
@@ -43,17 +43,18 @@ def main():
 	train_labels, valid_labels = data.train_valid_sets(len(images), all_labels, TRAIN_RATE)
 
 	print("Training...")
-	models.train(clf, images, box_size, train_labels, **VECTORIZE_PARAMS)
+	models.train(clf, images, box_size, train_labels, **VECTORIZATION_PARAMS)
 
 	# print("Get validation classification accuracy...")
-	# accuracy = models.accuracy(clf, images, box_size, valid_labels, **VECTORIZE_PARAMS)
+	# accuracy = models.accuracy(clf, images, box_size, valid_labels, **VECTORIZATION_PARAMS)
 	# print("  Accuracy:", accuracy)
 
 	print("Predicting...")
-	models.predict_and_validate(clf, images, box_size, valid_labels, **VECTORIZE_PARAMS)
+	models.predict_and_validate(clf, images, box_size, valid_labels, **VECTORIZATION_PARAMS)
 
 	print("Test now !")
 	import pdb; pdb.set_trace()
+
 
 if __name__ == '__main__':
 	main()
