@@ -36,7 +36,7 @@ def main():
 
 
 	print("Generating negative set...")
-	negatives = generate_negative_set(images, labels, set_size=NEG_SIZE)
+	negatives = generate_negative_set(images, labels, set_size=NEG_SIZE, save=True)
 	all_labels = np.concatenate([labels, negatives])
 
 	print("Creating train & validation sets...")
