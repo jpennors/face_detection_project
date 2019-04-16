@@ -3,11 +3,10 @@ from .utils import area_rate
 
 def apply_first_validation(predictions, labels):
     """
-        @brief Compute the error rate of predictions based on labels
-    
-        @param  predictions     Each prediction must be like this [image_id,x,y,h,l,score]
-        @param  labels          A label is like this [image_id,x,y,h,l,class]
-    
+    @brief Compute the error rate of predictions based on labels
+
+    @param  predictions     Each prediction must be like this [image_id,x,y,h,l,score]
+    @param  labels          A label is like this [image_id,x,y,h,l,class]
     """
 
     recognized_faces = 0

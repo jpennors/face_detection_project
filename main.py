@@ -5,9 +5,9 @@ from skimage.transform import resize
 
 
 # Params
-LIMIT = 300
+LIMIT = 100
 # NEG_SIZE = max(min(LIMIT, 100), 300)
-NEG_SIZE = 1000
+NEG_SIZE = 300
 TRAIN_RATE = 0.70
 CLASSIFIER = 'random_forest'
 MODEL_PARAMS = {
@@ -50,7 +50,7 @@ def main():
 	# print("  Accuracy:", accuracy)
 
 	print("Predicting...")
-	models.predict(clf, images, box_size, valid_labels, **VECTORIZE_PARAMS)
+	models.predict_and_validate(clf, images, box_size, valid_labels, **VECTORIZE_PARAMS)
 
 	print("Test now !")
 	# import pdb; pdb.set_trace()

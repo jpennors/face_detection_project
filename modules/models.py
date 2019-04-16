@@ -11,6 +11,8 @@ from .window import extract_boxes, sliding_windows
 from .window import filter_window_results
 from .validation import apply_first_validation
 
+POSITIVE_CLASS_INDEX = 1
+LIMIT_SCORE = 0.5
 BEST_MODEL = 'random_forest'
 
 MODELS = {
@@ -38,8 +40,6 @@ DECISION_METHODS = {
 	'DecisionTreeClassifier': 'predict_proba',
 	'RandomForestClassifier': 'predict_proba',
 }
-
-LIMIT_SCORE = 0.5
 
 def create_model(class_name=BEST_MODEL, params=None):
 	"""Easy constructor for models with default optimized params"""
@@ -84,7 +84,7 @@ def train(clf, images, box_size, train_labels, labels, vectorize, negatives=None
 	clf.fit(X, y)
 
 	# Beginning of the second training
-	predictions = predict_training_dataset(clf, images, box_size, vectorize)
+	predictions = predict(clf, images, box_size, vectorize)
 
 	positive_false = apply_first_validation(predictions, labels)
 	print(train_labels)
@@ -110,7 +110,17 @@ def accuracy(clf, images, box_size, labels, vectorize, negatives=None, **kwargs)
 
 	return clf.score(X, y)
 
-def predict_training_dataset(clf, images, box_size, vectorize, **kwargs):
+def predict(clf, images, box_size, vectorize, **kwargs):
+	"""
+	@brief      Find faces on the images
+	
+	@param      clf        The trained classifier
+	@param      images     The images
+	@param      box_size   The box size
+	@param      vectorize  The function used to vectorize the windows for the classifier
+	
+	@return     The covering boxes with their scores: [[ img_id, x, y, h, l, s ]]
+	"""
 	# Get params
 	slide_step = kwargs.get('slide_step', (20, 20))
 	downscale_step = kwargs.get('downscale_step', 0)
@@ -120,43 +130,52 @@ def predict_training_dataset(clf, images, box_size, vectorize, **kwargs):
 
 		coordinates, windows = sliding_windows(image, box_size, slide_step, downscale_step)
 
-		# Get the set and predict
+		# Get the set and predict scores per class
 		X = vectorize(windows, *kwargs.get('vectorize_args', []))
-		# import pdb; pdb.set_trace()
-		y = get_decision(clf, X)
+		scores = get_decision(clf, X)
 
-		# import pdb; pdb.set_trace()
-		predictions = filter_window_results(coordinates, y, LIMIT_SCORE, index+1)
-		for prediction in predictions:
-			results.append(prediction)
-
+		# predictions = filter_window_results(coordinates, y, LIMIT_SCORE, index+1)
+		predictions = filter_window_results(index+1, coordinates, scores, LIMIT_SCORE)
+		results.extend(predictions)
+			
 	return np.array(results)
 
-def predict(clf, images, box_size, test_labels, vectorize, **kwargs):
+def predict_and_validate(clf, images, box_size, test_labels, vectorize, **kwargs):
+	"""
+	@brief      Compute the accuracy of the trained classifier on labelled boxes
+	
+	@param      clf           The trained classifier
+	@param      images        The images
+	@param      box_size      The box size
+	@param      test_labels   The test labels
+	@param      vectorize     The function used to vectorize the windows for the classifier
+	
+	@return     The covering boxes with their scores: [[ img_id, x, y, h, l, s ]]
+	"""
 
 	boxes = extract_boxes(images, test_labels, box_size)
 
 	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
-
 	scores = get_decision(clf, X)
 
-	good_predictions = 0
-	bad_predictions = 0
+	results = {
+		'true_pos': 0,
+		'true_neg': 0,
+		'false_pos': 0,
+		'false_neg': 0,
+	}
 
+	# Compute results
 	for index, score in enumerate(scores):
+		pred_pos = score[POSITIVE_CLASS_INDEX] > LIMIT_SCORE
+		test_pos = test_labels[index,5] == 1
 
-		if (score[0] <= LIMIT_SCORE and test_labels[index][5] == -1) or (score[0] > LIMIT_SCORE and test_labels[index][5] == 1) :
-			good_predictions += 1
-		else :
-			bad_predictions += 1
-	print(good_predictions)
-	print(bad_predictions)
-	print(good_predictions/len(scores))
+		if pred_pos:
+			results['true_pos' if test_pos else 'false_pos'] += 1
+		else:
+			results['false_neg' if test_pos else 'true_neg'] += 1
 
+	print(results)
+	print(results['true_pos'] / len(scores))
 
-
-
-
-
-
-
+	return results
