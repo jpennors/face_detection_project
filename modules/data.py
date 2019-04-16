@@ -1,5 +1,5 @@
 import numpy as np
-from skimage.io import imread
+from skimage.io import imread, imsave
 from skimage.util import img_as_float
 from skimage.transform import resize
 import os
@@ -62,4 +62,10 @@ def train_valid_sets(n_images, labels, train_rate=0.75):
 	train_labels = labels[np.isin(label_corrected_ids, rnd_indexes[:tv_limit])]
 	valid_labels = labels[np.isin(label_corrected_ids, rnd_indexes[tv_limit:])]
 	return train_labels, valid_labels
+
+
+# Save image
+def save_img(path, img):
+
+	imsave(path, img)
 

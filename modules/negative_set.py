@@ -1,11 +1,14 @@
 import numpy as np
 from random import randint, randrange
 from .utils import area_rate, get_shape_stats
+from .data import save_img
+import os
 
+MIN_HEIGHT = 60
 
 def check_no_overlap(labels, box):
 	"""Check if the generated box doesn't overlap with any faces"""
-	return all([ area_rate(box, label[1:5]) < 1/2 for label in labels ])
+	return all([ area_rate(box, label[1:5]) < 1/3 for label in labels ])
 
 def get_box_parameters(labels):
 	"""Compute the average box parameters"""
@@ -15,18 +18,24 @@ def generate_box(img, box_ratio):
 	"""Generate a random box (x, y, h, l)"""
 	img_h, img_l = img.shape[:2]
 
-	if int(img_h / box_ratio) < img_l:
-		h = randint(40, img_h - 1)
-	else :
-		h = randint(40, int(img_l*box_ratio) - 1)
-
+	h = randint(MIN_HEIGHT, min(img_h - 1, img_l - 1))
 	l = int(h/box_ratio)
+
 	x = randrange(img_h - h)
 	y = randrange(img_l - l)
 
+	# if int(img_h / box_ratio) < img_l:
+	# 	h = randint(40, img_h - 1)
+	# else :
+	# 	h = randint(40, int(img_l*box_ratio) - 1)
+
+	# l = int(h/box_ratio)
+	# x = randrange(img_h - h)
+	# y = randrange(img_l - l)
+
 	return x, y, h, l
 
-def generate_negative_set(images, labels, set_size=300):
+def generate_negative_set(images, labels, set_size=300, save=False):
 	"""
 	@brief      Generate a set of negative labels from images 
 	
@@ -50,5 +59,31 @@ def generate_negative_set(images, labels, set_size=300):
 		if check_no_overlap(img_labels, box):
 			neg_set.append([ img_id, *box, -1 ])
 
+	# Save images if true
+	if save:
+		save_negative_set(images, np.array(neg_set))
+
 	return np.array(neg_set, dtype=int)
+
+
+def save_negative_set(images, negatives):
+	"""
+		Function to save images from the negative set
+	"""
+
+	for i in range(len(negatives)):
+
+		x = negatives[i][1]
+		y = negatives[i][2]
+		h = negatives[i][3]
+		l = negatives[i][4]
+		img = images[negatives[i][0]-1]
+		negative_img = img[x:x+h,y:y+l]
+
+		dir = "negative_set"
+
+		if not os.path.exists(dir):
+			os.makedirs(dir)
+
+		save_img(dir + "/" + str(i+1) + "-id-" + str(negatives[i][0]) + ".png", negative_img)
 
