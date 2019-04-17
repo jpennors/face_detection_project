@@ -43,14 +43,14 @@ def main():
 	train_labels, valid_labels = data.train_valid_sets(len(images), all_labels, TRAIN_RATE)
 
 	print("Training...")
-	models.train(clf, images, box_size, train_labels, **VECTORIZATION_PARAMS)
+	models.train(clf, images, box_size, train_labels, **VECTORIZATION_PARAMS, only_one_training=True)
 
 	# print("Get validation classification accuracy...")
 	# accuracy = models.accuracy(clf, images, box_size, valid_labels, **VECTORIZATION_PARAMS)
 	# print("  Accuracy:", accuracy)
 
-	print("Predicting...")
-	models.predict_and_validate(clf, images, box_size, valid_labels, **VECTORIZATION_PARAMS)
+	print("Predicting and validate on test examples...")
+	scores, results = models.predict_and_validate(clf, images, box_size, valid_labels, **VECTORIZATION_PARAMS)
 
 	print("Test now !")
 	import pdb; pdb.set_trace()

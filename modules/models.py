@@ -8,7 +8,7 @@ from sklearn.svm import SVC
 import numpy as np
 from .negative_set import get_box_parameters
 from .window import extract_boxes, sliding_windows, filter_window_results
-from .validation import get_false_positives
+from .validation import get_false_positives, get_results_from_scores
 
 LIMIT_SCORE = 0.5
 BEST_MODEL = 'random_forest'
@@ -106,6 +106,9 @@ def train(clf, images, box_size, train_labels, vectorize, negatives=None, **kwar
 	print("First training...")
 	clf.fit(X, y)
 
+	if kwargs.get('only_one_training'):
+		return None
+
 	# Beginning of the second training from the training images
 
 	# TODO Predict all images ???
@@ -149,6 +152,7 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 	@return     The covering boxes with their scores: [[ img_id, x, y, h, l, s ]]
 	"""
 	# Get params
+	limit_score = kwargs.get('limit_score', LIMIT_SCORE)
 	slide_step = kwargs.get('slide_step', (20, 20))
 	downscale_step = kwargs.get('downscale_step', 0)
 
@@ -161,14 +165,14 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 		X = vectorize(windows, *kwargs.get('vectorize_args', []))
 		scores = get_scores(clf, X)
 
-		predictions = filter_window_results(index+1, coordinates, scores, LIMIT_SCORE)
+		predictions = filter_window_results(index+1, coordinates, scores, limit_score)
 		results.extend(predictions)
 			
 	return np.array(results)
 
 def predict_and_validate(clf, images, box_size, test_labels, vectorize, **kwargs):
 	"""
-	@brief      Compute the accuracy of the trained classifier on labelled boxes
+	@brief      Compute the accuracy of the trained classifier only on labelled boxes
 	
 	@param      clf           The trained classifier
 	@param      images        The images
@@ -178,31 +182,11 @@ def predict_and_validate(clf, images, box_size, test_labels, vectorize, **kwargs
 	
 	@return     The covering boxes with their scores: [[ img_id, x, y, h, l, s ]]
 	"""
-
+	limit_score = kwargs.get('limit_score', LIMIT_SCORE)
 	boxes = extract_boxes(images, test_labels, box_size)
 
 	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
 	scores = get_scores(clf, X)
+	results = get_results_from_scores(scores, test_labels, limit_score)
 
-	results = {
-		'true_pos': 0,
-		'true_neg': 0,
-		'false_pos': 0,
-		'false_neg': 0,
-	}
-
-	# Compute results
-	for index, score in enumerate(scores):
-		pred_pos = score > LIMIT_SCORE
-		test_pos = test_labels[index,5] == 1
-
-		if pred_pos:
-			results['true_pos' if test_pos else 'false_pos'] += 1
-		else:
-			results['false_neg' if test_pos else 'true_neg'] += 1
-
-	if kwargs.get('display_info', True):
-		print("Prediction results:", results)
-		print(f"Prediction accuracy for faces: {results['true_pos'] / sum(test_labels[:,5] == 1) * 100:.2f}%")
-
-	return results
+	return scores, results

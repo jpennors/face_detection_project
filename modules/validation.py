@@ -3,6 +3,37 @@ from .utils import area_rate
 
 COVER_AREA = 0.5
 
+def get_results_from_scores(scores, test_labels, limit_score, display_info=False):
+	"""Compute results true/false positive/negative from scores and labels"""
+	results = {
+		'true_pos': 0,
+		'true_neg': 0,
+		'false_pos': 0,
+		'false_neg': 0,
+	}
+
+	# Compute results
+	for index, score in enumerate(scores):
+		pred_pos = score > limit_score
+		test_pos = test_labels[index,5] == 1
+
+		if pred_pos:
+			results['true_pos' if test_pos else 'false_pos'] += 1
+		else:
+			results['false_neg' if test_pos else 'true_neg'] += 1
+
+	# Compute precision and recall
+	precision = results['true_pos'] / (results['true_pos'] + results['false_pos'])
+	recall = results['true_pos'] / (results['true_pos'] + results['false_neg'])
+	results['f-score'] = 2 * (precision * recall) / (precision + recall)
+	results['precision'] = precision
+	results['recall'] = recall
+
+	if display_info:
+		print("Prediction results:", results)
+
+	return results
+
 def get_false_positives(predictions, labels, display_info=True):
 	"""
 	@brief Compute the error rate of predictions based on labels
