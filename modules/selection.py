@@ -45,14 +45,14 @@ def try_params(images, label_sets, clf_name, global_params, changing_params):
 			# Build, train and validate classifier
 			clf = models.create_model(clf_name, model_params)
 			models.train(clf, images, box_size, train_labels, **vectorization_params)
-			score = models.predict_and_validate(clf, images, box_size, valid_labels, **vectorization_params)
+			score, result = models.predict_and_validate(clf, images, box_size, valid_labels, **vectorization_params)
 
 			# Add score to array
 			param_results.append({
 				'name': param_name,
 				'value': param_value,
 				'score': score,
-				'face_accuracy': score['true_pos'] / (score['true_pos'] + score['false_neg'] ),
+				'result': result,
 			})
 
 	return {
@@ -92,13 +92,13 @@ def try_classifiers(images, label_sets, global_params, changing_params={}):
 
 			clf = models.create_model(clf_name, model_params)
 			models.train(clf, images, box_size, train_labels, **vectorization_params)
-			score = models.predict_and_validate(clf, images, box_size, valid_labels, **vectorization_params)
+			score, result = models.predict_and_validate(clf, images, box_size, valid_labels, **vectorization_params)
 			results[clf_name] = {
 				'classifier': clf_name,
 				'global_params': global_params,
 				'results': [{
 					'score': score,
-					'face_accuracy': score['true_pos'] / (score['true_pos'] + score['false_neg'] ),
+					'result': result,
 				}],
 			}
 

@@ -15,10 +15,11 @@ MODEL_PATH = 'model.pickle'
 
 def load_labels(path=LABEL_PATH, limit=None):
 	"""Labels are of the following format: [[image_id, x, y, h, l, class]]"""
+	if path == 'test':
+		path = TEST_PATH
 	labels = np.loadtxt(path, dtype=int)
 	if limit:
 		labels = labels[labels[:,0] <= limit]
-
 	return np.append(labels, np.ones((labels.shape[0], 1)), axis=1)
 
 def save_prediction(predictions, path=PREDICTION_PATH):
@@ -43,13 +44,8 @@ def load_model(path=MODEL_PATH):
 
 def save_model(model, path=MODEL_PATH):
 	"""Save model in a pickle file"""
-	return pickle.dump(open(path, 'wb'), model)
+	return pickle.dump(model, open(path, 'wb'))
 
-
-# Test set
-
-def load_test_images():
-	return load_images(path=TEST_PATH)
 
 # Training - Validation sets
 

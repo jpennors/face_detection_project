@@ -175,8 +175,6 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 		prediction = filter_window_results(index+1, coordinates, scores, limit_score)
 		predictions.extend(prediction)
 
-		# TODO validation
-			
 	return np.array(predictions)
 
 def predict_and_validate(clf, images, box_size, test_labels, vectorize, **kwargs):
