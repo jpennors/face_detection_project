@@ -116,13 +116,31 @@ def sliding_windows(img, box_size, step=None, downscale_step=None):
 
 	return np.array(coordinates, dtype=int), np.array(windows)
 
+def multiple_sliding_windows(images, *args, **kwargs):
+	only = kwargs.pop('only', None)
+	indexes = []
+	coordinates = []
+	windows = []
 
-def filter_window_results(img_id, coordinates, predictions, limit):
+	count = len(images) if only is None else len(only)
+	for index, img in enumerate(tqdm(images, desc="Sliding windows", total=count)):
+		if only is not None and index not in only:
+			continue
+		coord, window = sliding_windows(img, *args, **kwargs)
+		indexes.extend([ index ] * len(coord))
+		coordinates.extend(coord)
+		windows.extend(window)
+
+	return np.array(indexes, dtype=int), np.array(coordinates, dtype=int), np.array(windows)
+
+def filter_window_results(indexes, coordinates, predictions, limit):
 	"""Retrieve faces positive predictions from all predicitions""" 
-
 	# Keep predictions where face recognition class is higher than limit
 	positive_indices = np.where(predictions[:] > limit)
 
+	single_index = not hasattr(indexes, '__len__')
+	if not single_index:
+		indexes = indexes[positive_indices]
 	positive_predictions = predictions[positive_indices]
 	positive_coordinates = coordinates[positive_indices]
 
@@ -136,10 +154,10 @@ def filter_window_results(img_id, coordinates, predictions, limit):
 		if i not in removed_indices:
 			coord = positive_coordinates[i]
 			score = positive_predictions[i]
-			face_boxes.append([ img_id, *coord, score ])
+			index = indexes if single_index else indexes[i]
+			face_boxes.append([ index, *coord, score ])
 			for j in sorted_indices:
 				if i != j and area_rate(positive_coordinates[i], positive_coordinates[j]) > 1/2 :
 					removed_indices.append(j)
 
 	return np.array(face_boxes)
-

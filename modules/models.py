@@ -118,7 +118,7 @@ def train(clf, images, box_size, train_labels, vectorize, negatives=None, **kwar
 
 	positive_false = get_false_positives(predictions, train_labels)
 	train_labels = np.concatenate([train_labels, positive_false])
-	print(f"Adding {len(positive_false)} false positives")
+	print(f"Adding {len(positive_false)} false positives / {len(predictions)} predictions")
 
 	# Extract new boxes of the images from the labels
 	boxes = extract_boxes(images, train_labels, box_size)
@@ -155,21 +155,33 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 	limit_score = kwargs.get('limit_score', LIMIT_SCORE)
 	slide_step = kwargs.get('slide_step')
 	downscale_step = kwargs.get('downscale_step')
+	windows_sets = kwargs.get('windows_sets', None)
 	only = kwargs.get('only', None)
 
-	predictions = []
-	for index, image in enumerate(tqdm(images, desc='Predicting')):
-		if only is not None and index not in only:
-			continue
-
-		coordinates, windows = sliding_windows(image, box_size, slide_step, downscale_step)
+	if windows_sets is not None:
+		# Predict all the windows at once
+		indexes, coordinates, windows = windows_sets
 
 		# Get the set and predict scores per class
 		X = vectorize(windows, *kwargs.get('vectorize_args', []))
 		scores = get_scores(clf, X)
+		predictions = filter_window_results(indexes, coordinates, scores, limit_score)
 
-		prediction = filter_window_results(index+1, coordinates, scores, limit_score)
-		predictions.extend(prediction)
+	else:
+		# Slide through each image and predict the windows
+		predictions = []
+		count = len(images) if only is None else len(only)
+		for index, image in enumerate(tqdm(images, desc='Predicting windows', total=count)):
+			if only is not None and index not in only:
+				continue
+
+			# Get the set and predict scores per class
+			coordinates, windows = sliding_windows(image, box_size, slide_step, downscale_step)
+			X = vectorize(windows, *kwargs.get('vectorize_args', []))
+			scores = get_scores(clf, X)
+
+			prediction = filter_window_results(index+1, coordinates, scores, limit_score)
+			predictions.extend(prediction)
 
 	return np.array(predictions)
 

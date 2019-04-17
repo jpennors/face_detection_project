@@ -1,7 +1,7 @@
 import numpy as np
 from random import randint, randrange
+from skimage.io import imsave
 from .utils import area_rate, get_shape_stats
-from .data import save_img
 import os
 
 MIN_BOX_HEIGHT = 60
@@ -82,5 +82,5 @@ def save_negative_set(images, negatives):
 		if not os.path.exists(dir):
 			os.makedirs(dir)
 
-		save_img(f"{dir}/{i+1}-id-{negatives[i][0]}.png", negative_img)
+		imsave(f"{dir}/{i+1}-id-{negatives[i][0]}.png", negative_img)
 
