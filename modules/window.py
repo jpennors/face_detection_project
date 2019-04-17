@@ -1,6 +1,6 @@
 import numpy as np
 from skimage.transform import resize
-from .utils import area_rate
+from .utils import area_rate, tqdm
 
 DEFAULT_DOWNSCALE_STEP = 50 # Downscale by 50px
 DEFAULT_SLIDE_STEP = (20, 20)
@@ -17,24 +17,18 @@ def extract_boxes(images, labels, box_size):
 		if img_id != current_idx:
 			current_idx = img_id
 			# current_img = img_as_float(imread(f"./train/{str(img_id).zfill(4)}.jpg"))
-			current_img = images[int(img_id)-1]
+			current_img = images[img_id - 1]
 
 		# Extract box
-		box = current_img[int(x):int(x+h), int(y):int(y+l)]
-		box = compress_image(box, box_size)
+		box = compress_image(current_img[x:x+h, y:y+l], box_size)
 		boxes.append(box)
 
-
-	boxes =  np.array(boxes)
-	if boxes.shape != 4:
-		boxes
-
-	return boxes
+	return np.array(boxes)
 
 def compress_image(img, size):
 	return resize(img, size, mode='constant', anti_aliasing=True)
 
-def down_image_pyramid(img, step=DEFAULT_DOWNSCALE_STEP, min_height=100, min_width=100):
+def downscale_image(img, step, min_height=100, min_width=100):
 	"""
 	@brief      Generate resized image by decreasing the height of 'step' px
 
@@ -61,7 +55,7 @@ def down_image_pyramid(img, step=DEFAULT_DOWNSCALE_STEP, min_height=100, min_wid
 				continue
 
 			size = int(h * r / 100), int(l * r / 100)
-			yield resize(img, size, mode='constant', anti_aliasing=True)
+			yield compress_image(img, size)
 
 	else:
 		# Downscale by pixels
@@ -70,21 +64,31 @@ def down_image_pyramid(img, step=DEFAULT_DOWNSCALE_STEP, min_height=100, min_wid
 		while h - step > min_height:
 			h = int(h - step)
 			l = int(h / ratio)
-			yield resize(img, (h, l), mode='constant', anti_aliasing=True)
+			yield compress_image(img, (h, l))
 
-def sliding_windows(img, box_size, step=DEFAULT_SLIDE_STEP, downscale_step=DEFAULT_DOWNSCALE_STEP):
+def sliding_windows(img, box_size, step=None, downscale_step=None):
 	"""
-	@brief		Slide accros an image and pick window region
+	@brief		Slide accross an image and pick window regions
 
-	@param		img		Image
+	@param		img							The image to slide accross
+	@param		box_size				The size of the window
+	@param		step						The step by which to slide the window in x and y
+	@param		downscale_step	The step by which to downscale the image
 
 	@return		Set of windows of the following shape [[x, y, window]]
 	"""
+	# Clean params
+	if step is None:
+		step = DEFAULT_SLIDE_STEP
+	if downscale_step is None:
+		downscale_step = DEFAULT_DOWNSCALE_STEP
 	if type(step) in (int, float):
 		step = (step, step)
 	if len(step) != 2:
 		raise ValueError("There must be two values for the step")
 
+	# Get params
+	ini_img_h, ini_img_l = img.shape[:2]
 	step_h, step_l = step
 	box_h, box_l = box_size
 	if step_h >= box_h or step_l >= box_l:
@@ -92,9 +96,11 @@ def sliding_windows(img, box_size, step=DEFAULT_SLIDE_STEP, downscale_step=DEFAU
 
 	coordinates = []
 	windows = []
-	for scaled_img in down_image_pyramid(img, step=downscale_step):
+	for scaled_img in downscale_image(img, step=downscale_step):
 		img_h, img_l = scaled_img.shape[:2]
-		# TODO shift x, y ?
+
+		r_h = img_h / ini_img_h
+		r_l = img_l / ini_img_l
 
 		for x in range(0, img_h, step_h):
 			for y in range(0, img_l, step_l):
@@ -102,10 +108,13 @@ def sliding_windows(img, box_size, step=DEFAULT_SLIDE_STEP, downscale_step=DEFAU
 				# TODO Comment prendre le dernier ?
 				if x + step_h + box_h < img_h and y + step_l + box_l < img_l:
 					window = scaled_img[x:x+box_h, y:y+box_l]
-					coordinates.append([x, y, box_h, box_l])
+
+					# Window is at box_size for classification
+					# but coordinates is not for detections
+					coordinates.append([ x/r_h, y/r_l, box_h/r_h, box_l/r_l ])
 					windows.append(window)
 
-	return np.array(coordinates), np.array(windows)
+	return np.array(coordinates, dtype=int), np.array(windows)
 
 
 def filter_window_results(img_id, coordinates, predictions, limit):

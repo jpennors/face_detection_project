@@ -20,7 +20,7 @@ def load_labels(path=LABEL_PATH, limit=None):
 	labels = np.loadtxt(path, dtype=int)
 	if limit:
 		labels = labels[labels[:,0] <= limit]
-	return np.append(labels, np.ones((labels.shape[0], 1)), axis=1)
+	return np.append(labels, np.ones((labels.shape[0], 1), dtype=int), axis=1)
 
 def save_prediction(predictions, path=PREDICTION_PATH):
 	"""Save predictions in the following format: [[image_id, x, y, h, l, score]]"""

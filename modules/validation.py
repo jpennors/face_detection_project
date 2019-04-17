@@ -61,7 +61,7 @@ def get_false_positives(predictions, labels, display_info=False):
 		print(f"{len(false_positives)} false positives / {len(predictions)} predictions")
 		print(f"Taux de réussite : {100 - len(false_positives)/len(predictions)*100:.2f}%")
 
-	return np.array(false_positives)
+	return np.array(false_positives, dtype=int)
 
 def rate_predictions(predictions, labels):
 	# Take only real faces

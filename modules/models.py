@@ -9,12 +9,8 @@ import numpy as np
 from .negative_set import get_box_parameters
 from .window import extract_boxes, sliding_windows, filter_window_results
 from .validation import get_false_positives, get_results_from_scores
+from .utils import tqdm
 
-try:
-	from tqdm import tqdm
-except ImportError:
-	def tqdm(gen, *args, **kwargs):
-		return gen
 
 LIMIT_SCORE = 0.5
 BEST_MODEL = 'random_forest'
@@ -157,8 +153,8 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 	"""
 	# Get params
 	limit_score = kwargs.get('limit_score', LIMIT_SCORE)
-	slide_step = kwargs.get('slide_step', (20, 20))
-	downscale_step = kwargs.get('downscale_step', 0)
+	slide_step = kwargs.get('slide_step')
+	downscale_step = kwargs.get('downscale_step')
 	only = kwargs.get('only', None)
 
 	predictions = []

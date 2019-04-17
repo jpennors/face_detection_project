@@ -6,10 +6,11 @@ import pickle
 
 
 # Params
-TRAIN_AND_SAVE = False
+TRAIN = True
+SAVE_MODEL = False
 SAVE_NEGATIVES = False
-LIMIT = 300
-NEG_SIZE = 350
+LIMIT = 50
+NEG_SIZE = 60
 TRAIN_RATE = 0.70
 CLASSIFIER = 'random_forest'
 MODEL_PARAMS = {
@@ -21,7 +22,7 @@ VECTORIZATION_PARAMS = {
 }
 
 def main():
-	if TRAIN_AND_SAVE:
+	if TRAIN:
 		clf = models.create_model(CLASSIFIER, MODEL_PARAMS)
 
 		print("Loading data...")
@@ -48,15 +49,18 @@ def main():
 		print("Training...")
 		models.train(clf, images, box_size, train_labels, **VECTORIZATION_PARAMS)
 
+		import pdb; pdb.set_trace()
+
 		print("\nPredicting with windows...")
 		valid_indexes = np.unique(valid_labels[:,0]) - 1
 		predictions = models.predict(clf, images, box_size, **VECTORIZATION_PARAMS, only=valid_indexes)
 
-		import pdb; pdb.set_trace()
-		print('Saving alllll')
-		to_save = [clf, images, box_size, train_labels, valid_labels, predictions]
-		model_file = open('./temp.pickle', 'wb')
-		pickle.dump(to_save, model_file)
+		if SAVE_MODEL:
+			import pdb; pdb.set_trace()
+			print('Saving alllll')
+			to_save = [clf, images, box_size, train_labels, valid_labels, predictions]
+			model_file = open('./temp.pickle', 'wb')
+			pickle.dump(to_save, model_file)
 
 	else:
 		print("Loading all..")
@@ -70,6 +74,12 @@ def main():
 
 	# print("Predicting and validate on test examples...")
 	# scores, results = models.predict_and_validate(clf, images, box_size, valid_labels, **VECTORIZATION_PARAMS)
+
+	print("\nPredicting with windows...")
+	valid_indexes = np.unique(valid_labels[:,0]) - 1
+	predictions = models.predict(clf, images, box_size, **VECTORIZATION_PARAMS, only=valid_indexes)
+
+	import pdb; pdb.set_trace()
 
 	print("\nPredicting with windows and validate...")
 	results = validation.rate_predictions(predictions, valid_labels)

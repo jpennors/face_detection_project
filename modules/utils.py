@@ -1,5 +1,12 @@
 import numpy as np
 
+try:
+	from tqdm import tqdm
+except ImportError:
+	def tqdm(gen, *args, **kwargs):
+		return gen
+
+		
 def get_shape_stats(shapes, display_info=False):
 	"""Compute statistics about image or box shapes [[h, l]]"""
 	h_col = shapes[:,0]
