@@ -1,7 +1,8 @@
 .ipynb_checkpoints/*
 test/*
 project_train/*
-*.ipynb
+main.ipynb
+Training_image.ipynb
 SY32_P19_Projet_Detection_de_visages.pdf
 *.py[co]
 __pycache__
