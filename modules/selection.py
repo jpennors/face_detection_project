@@ -1,5 +1,9 @@
 from .negative_set import get_box_parameters
+from .validation import get_results_from_scores
 from . import models
+import numpy as np
+
+LIMIT_SCORE = 0.5
 
 def try_params(images, label_sets, clf_name, global_params, changing_params, **kwargs):
 	"""
@@ -17,6 +21,7 @@ def try_params(images, label_sets, clf_name, global_params, changing_params, **k
 	train_labels, valid_labels = label_sets
 
 	windows_sets = kwargs.get('windows_sets')
+	global_params = global_params.copy()
 	global_vectorization_params = global_params.pop('vectorization_params')
 	global_box_size = global_params.pop('box_size')
 	param_results = []
@@ -44,11 +49,18 @@ def try_params(images, label_sets, clf_name, global_params, changing_params, **k
 				}
 				vectorization_params = global_vectorization_params
 
-			# Build, train and validate classifier
+			# Build and train classifier
 			clf = models.create_model(clf_name, model_params)
 			models.train(clf, images, box_size, train_labels, **vectorization_params, windows_sets=windows_sets)
-			score, result = models.predict_and_validate(clf, images, box_size, valid_labels,
-																									**vectorization_params, windows_sets=windows_sets)
+
+			# Predict and validate validation set
+			valid_indexes = np.unique(valid_labels[:,0]) - 1 # Beware ! Indexes not ids
+			predictions, score = models.predict(clf, images, box_size, only=valid_indexes,
+															**vectorization_params, with_scores=True, windows_sets=windows_sets)
+			result = get_results_from_scores(score, valid_labels, LIMIT_SCORE)
+
+			# score, result = models.predict_and_validate(clf, images, box_size, valid_labels,
+			# 																						**vectorization_params, windows_sets=windows_sets)
 
 			# Add score to array
 			param_results.append({

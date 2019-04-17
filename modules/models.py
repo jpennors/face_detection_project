@@ -85,7 +85,7 @@ def get_scores(clf, *args, **kwargs):
 	return scores
 
 
-def train(clf, images, box_size, train_labels, vectorize, negatives=None, **kwargs):
+def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	"""
 	@brief      Train a classifier with the boxes labelled on the images
 	
@@ -98,13 +98,13 @@ def train(clf, images, box_size, train_labels, vectorize, negatives=None, **kwar
 	@param      negatives       The negatives labels
 	"""
 	# Extract boxes of the images from the labels
-	boxes = extract_boxes(images, train_labels, box_size)
+	boxes = extract_boxes(images, labels, box_size)
 
 	# Get the training set
 	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
-	y = train_labels[:,5]
+	y = labels[:,5]
 
-	# First training with only train_labels and random negatives
+	# First training with only labels and random negatives
 	print("First training...")
 	clf.fit(X, y)
 
@@ -113,12 +113,16 @@ def train(clf, images, box_size, train_labels, vectorize, negatives=None, **kwar
 
 	# Beginning of the second training from the training images
 
-	train_indexes = np.unique(train_labels[:,0]) - 1 # Beware ! Indexes not ids
+	train_indexes = np.unique(labels[:,0]) - 1 # Beware ! Indexes not ids
 	predictions = predict(clf, images, box_size, vectorize, only=train_indexes)
 
-	positive_false = get_false_positives(predictions, train_labels)
-	train_labels = np.concatenate([train_labels, positive_false])
-	print(f"Adding {len(positive_false)} false positives / {len(predictions)} predictions")
+	false_positives = get_false_positives(predictions, labels)
+	if len(false_positives) > 0:
+		train_labels = np.concatenate([labels, false_positives])
+	else:
+		print(f"!! No false positives given out of {len(predictions)} predictions, add more images")
+		train_labels = labels
+	print(f"Adding {len(false_positives)} false positives / {len(predictions)} predictions")
 
 	# Extract new boxes of the images from the labels
 	boxes = extract_boxes(images, train_labels, box_size)
@@ -160,10 +164,9 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 
 	if windows_sets is not None:
 		# Predict all the windows at once
-		indexes, coordinates, windows = windows_sets
+		indexes, coordinates, X = windows_sets
 
 		# Get the set and predict scores per class
-		X = vectorize(windows, *kwargs.get('vectorize_args', []))
 		scores = get_scores(clf, X)
 		predictions = filter_window_results(indexes, coordinates, scores, limit_score)
 
@@ -183,6 +186,8 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 			prediction = filter_window_results(index+1, coordinates, scores, limit_score)
 			predictions.extend(prediction)
 
+	if kwargs.get('with_scores'):
+		return np.array(predictions), scores
 	return np.array(predictions)
 
 def predict_and_validate(clf, images, box_size, test_labels, vectorize, **kwargs):

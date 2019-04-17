@@ -23,11 +23,14 @@ def get_results_from_scores(scores, test_labels, limit_score, display_info=False
 			results['false_neg' if test_pos else 'true_neg'] += 1
 
 	# Compute precision and recall
-	precision = results['true_pos'] / (results['true_pos'] + results['false_pos'])
-	recall = results['true_pos'] / (results['true_pos'] + results['false_neg'])
-	results['f-score'] = 2 * (precision * recall) / (precision + recall)
-	results['precision'] = precision
-	results['recall'] = recall
+	try:
+		precision = results['true_pos'] / (results['true_pos'] + results['false_pos'])
+		recall = results['true_pos'] / (results['true_pos'] + results['false_neg'])
+		results['f-score'] = 2 * (precision * recall) / (precision + recall)
+		results['precision'] = precision
+		results['recall'] = recall
+	except ZeroDivisionError:
+		pass
 
 	if display_info:
 		print("Prediction results:", results)

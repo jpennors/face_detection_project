@@ -3,7 +3,7 @@ from skimage.transform import resize
 from .utils import area_rate, tqdm
 
 DEFAULT_DOWNSCALE_STEP = 50 # Downscale by 50px
-DEFAULT_SLIDE_STEP = (20, 20)
+DEFAULT_SLIDE_STEP = (60, 50)
 
 def extract_boxes(images, labels, box_size):
 	"""
@@ -56,7 +56,6 @@ def downscale_image(img, step, min_height=100, min_width=100):
 
 			size = int(h * r / 100), int(l * r / 100)
 			yield compress_image(img, size)
-
 	else:
 		# Downscale by pixels
 		step = int(step)
@@ -105,7 +104,6 @@ def sliding_windows(img, box_size, step=None, downscale_step=None):
 		for x in range(0, img_h, step_h):
 			for y in range(0, img_l, step_l):
 
-				# TODO Comment prendre le dernier ?
 				if x + step_h + box_h < img_h and y + step_l + box_l < img_l:
 					window = scaled_img[x:x+box_h, y:y+box_l]
 
