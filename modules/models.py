@@ -10,6 +10,12 @@ from .negative_set import get_box_parameters
 from .window import extract_boxes, sliding_windows, filter_window_results
 from .validation import get_false_positives, get_results_from_scores
 
+try:
+	from tqdm import tqdm
+except ImportError:
+	def tqdm(gen, *args, **kwargs):
+		return gen
+
 LIMIT_SCORE = 0.5
 BEST_MODEL = 'random_forest'
 
@@ -111,10 +117,8 @@ def train(clf, images, box_size, train_labels, vectorize, negatives=None, **kwar
 
 	# Beginning of the second training from the training images
 
-	# TODO Predict all images ???
-	# image_indexes = range(1, len(images)+1)
-	train_images = images #[np.isin(image_indexes, train_labels[:,0])]
-	predictions = predict(clf, train_images, box_size, vectorize)
+	train_indexes = np.unique(train_labels[:,0])
+	predictions = predict(clf, images, box_size, vectorize, only=train_indexes)
 
 	positive_false = get_false_positives(predictions, train_labels)
 	train_labels = np.concatenate([train_labels, positive_false])
@@ -155,9 +159,12 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 	limit_score = kwargs.get('limit_score', LIMIT_SCORE)
 	slide_step = kwargs.get('slide_step', (20, 20))
 	downscale_step = kwargs.get('downscale_step', 0)
+	only = kwargs.get('only', None)
 
-	results = []
-	for index, image in enumerate(images):
+	predictions = []
+	for index, image in enumerate(tqdm(images, desc='Predicting')):
+		if only is not None and index not in only:
+			continue
 
 		coordinates, windows = sliding_windows(image, box_size, slide_step, downscale_step)
 
@@ -165,10 +172,12 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 		X = vectorize(windows, *kwargs.get('vectorize_args', []))
 		scores = get_scores(clf, X)
 
-		predictions = filter_window_results(index+1, coordinates, scores, limit_score)
-		results.extend(predictions)
+		prediction = filter_window_results(index+1, coordinates, scores, limit_score)
+		predictions.extend(prediction)
+
+		# TODO validation
 			
-	return np.array(results)
+	return np.array(predictions)
 
 def predict_and_validate(clf, images, box_size, test_labels, vectorize, **kwargs):
 	"""
