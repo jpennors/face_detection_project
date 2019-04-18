@@ -134,6 +134,7 @@ def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	# Finally, train again
 	print("Second training...")
 	clf.fit(X, y)
+	return train_labels
 
 def accuracy(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	boxes = extract_boxes(images, labels, box_size)
@@ -173,8 +174,7 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 	else:
 		# Slide through each image and predict the windows
 		predictions = []
-		count = len(images) if only is None else len(only)
-		for index, image in enumerate(tqdm(images, desc='Predicting windows', total=count)):
+		for index, image in enumerate(tqdm(images, desc='Predicting windows')):
 			if only is not None and index not in only:
 				continue
 

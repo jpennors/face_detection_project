@@ -1,5 +1,5 @@
 from .negative_set import get_box_parameters
-from .validation import get_results_from_scores
+from .validation import get_results_from_scores, rate_predictions
 from . import models
 import numpy as np
 
@@ -37,10 +37,20 @@ def try_params(images, label_sets, clf_name, global_params, changing_params, **k
 				box_size = global_box_size
 				model_params = global_params
 				vectorization_params = param_value
+				kw_params = kwargs
 			elif param_name == 'box_size':
 				box_size = param_value
 				model_params = global_params
-				vectorization_params = param_value				
+				vectorization_params = global_vectorization_params				
+				kw_params = kwargs
+			elif param_name in ('limit_score', 'slide_step', 'downscale_step'):
+				box_size = global_box_size
+				model_params = global_params
+				vectorization_params = global_vectorization_params
+				kw_params = {
+					**kwargs,
+					param_name: param_value,
+				}
 			else:
 				box_size = global_box_size
 				model_params = {
@@ -48,16 +58,18 @@ def try_params(images, label_sets, clf_name, global_params, changing_params, **k
 					param_name: param_value,
 				}
 				vectorization_params = global_vectorization_params
+				kw_params = kwargs
 
 			# Build and train classifier
 			clf = models.create_model(clf_name, model_params)
-			models.train(clf, images, box_size, train_labels, **vectorization_params, windows_sets=windows_sets)
+			models.train(clf, images, box_size, train_labels, **vectorization_params, **kw_params, windows_sets=windows_sets)
 
 			# Predict and validate validation set
 			valid_indexes = np.unique(valid_labels[:,0]) - 1 # Beware ! Indexes not ids
-			predictions, score = models.predict(clf, images, box_size, only=valid_indexes,
+			predictions, score = models.predict(clf, images, box_size, only=valid_indexes, **kw_params,
 															**vectorization_params, with_scores=True, windows_sets=windows_sets)
-			result = get_results_from_scores(score, valid_labels, LIMIT_SCORE)
+			# result = get_results_from_scores(score, valid_labels, LIMIT_SCORE)
+			result = rate_predictions(predictions, valid_labels)
 
 			# score, result = models.predict_and_validate(clf, images, box_size, valid_labels,
 			# 																						**vectorization_params, windows_sets=windows_sets)
@@ -66,7 +78,7 @@ def try_params(images, label_sets, clf_name, global_params, changing_params, **k
 			param_results.append({
 				'name': param_name,
 				'value': param_value,
-				'score': score,
+				# 'score': score,
 				'result': result,
 			})
 

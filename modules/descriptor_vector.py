@@ -16,4 +16,4 @@ def gray_flatten(images):
 	return np.array([ rgb2gray(img).ravel() for img in images ])
 
 def daisy(images):
-	return np.array([ feature.daisy(img) for img in images ])
+	return np.array([ feature.daisy(rgb2gray(img)) for img in images ])

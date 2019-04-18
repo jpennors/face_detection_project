@@ -9,7 +9,7 @@ import pickle
 TRAIN = True
 SAVE_MODEL = False
 SAVE_NEGATIVES = False
-LIMIT = 50
+LIMIT = 200
 NEG_SIZE = 60
 TRAIN_RATE = 0.70
 CLASSIFIER = 'random_forest'
