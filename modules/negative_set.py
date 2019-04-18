@@ -5,10 +5,11 @@ from .utils import area_rate, get_shape_stats
 import os
 
 MIN_BOX_HEIGHT = 60
+OVERLAP_LIMIT = 1/3
 
 def check_no_overlap(labels, box):
 	"""Check if the generated box doesn't overlap with any faces"""
-	return all([ area_rate(box, label[1:5]) < 1/3 for label in labels ])
+	return all([ area_rate(box, label[1:5]) < OVERLAP_LIMIT for label in labels ])
 
 def get_box_parameters(labels):
 	"""Compute the average box parameters"""

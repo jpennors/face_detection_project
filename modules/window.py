@@ -1,6 +1,7 @@
 import numpy as np
 from skimage.transform import resize
 from .utils import area_rate, tqdm
+from math import ceil
 
 DEFAULT_DOWNSCALE_STEP = 50 # Downscale by 50px
 DEFAULT_SLIDE_STEP = (60, 50)
@@ -28,6 +29,27 @@ def extract_boxes(images, labels, box_size):
 def compress_image(img, size):
 	return resize(img, size, mode='constant', anti_aliasing=True)
 
+def compute_no_windows(img, box_size, slide_step, downscale_step):
+	"""Compute the number of sliding windows given for an image"""
+	box_h, box_l = box_size
+	slide_h, slide_l = slide_step
+	min_height,	min_width = box_size
+
+	h, l = img.shape[:2]
+	ratio = h / l
+	no_windows = 0
+	no_images = 0
+	while h > min_height and l > min_width:
+		n_h = ceil((h - box_h) / slide_h)
+		n_l = ceil((l - box_l) / slide_l)
+		no_windows += n_h * n_l
+		no_images += 1
+		h = int(h - downscale_step)
+		l = int(h / ratio)
+
+	return no_windows
+
+
 def downscale_image(img, step, min_height=100, min_width=100):
 	"""
 	@brief      Generate resized image by decreasing the height of 'step' px
@@ -53,16 +75,17 @@ def downscale_image(img, step, min_height=100, min_width=100):
 		for r in reversed(range(r_min, 100, step)):
 			if r == 100:
 				continue
-
 			size = int(h * r / 100), int(l * r / 100)
 			yield compress_image(img, size)
 	else:
 		# Downscale by pixels
 		step = int(step)
 		ratio = h / l
-		while h - step > min_height:
+		no_images = 0
+		while h - step > min_height and int((h - step)/ratio) > min_width:
 			h = int(h - step)
 			l = int(h / ratio)
+			no_images += 1
 			yield compress_image(img, (h, l))
 
 def sliding_windows(img, box_size, step=None, downscale_step=None):
@@ -90,14 +113,18 @@ def sliding_windows(img, box_size, step=None, downscale_step=None):
 	ini_img_h, ini_img_l = img.shape[:2]
 	step_h, step_l = step
 	box_h, box_l = box_size
+	min_h, min_l = box_size
 	if step_h >= box_h or step_l >= box_l:
 		raise ValueError("The steps must be less than the box size")
 
-	coordinates = []
-	windows = []
-	for scaled_img in downscale_image(img, step=downscale_step, min_height=box_h, min_width=box_l):
-		img_h, img_l = scaled_img.shape[:2]
+	# Allocate space
+	n_results = compute_no_windows(img, box_size, step, downscale_step)
+	coordinates = np.zeros((n_results, 4), dtype=int)
+	windows = np.zeros((n_results, *box_size, 3))
 
+	index = 0
+	for scaled_img in downscale_image(img, downscale_step, min_h, min_l):
+		img_h, img_l = scaled_img.shape[:2]
 		r_h = img_h / ini_img_h
 		r_l = img_l / ini_img_l
 
@@ -108,10 +135,11 @@ def sliding_windows(img, box_size, step=None, downscale_step=None):
 					# Window is at box_size for classification
 					# but coordinates is not for detections
 					window = scaled_img[x:x+box_h, y:y+box_l]
-					coordinates.append([ x/r_h, y/r_l, box_h/r_h, box_l/r_l ])
-					windows.append(window)
+					coordinates[index] = [ x/r_h, y/r_l, box_h/r_h, box_l/r_l ]
+					windows[index] = window
+					index += 1
 
-	return np.array(coordinates, dtype=int), np.array(windows)
+	return coordinates, windows
 
 def multiple_sliding_windows(images, *args, **kwargs):
 	only = kwargs.pop('only', None)
@@ -128,16 +156,17 @@ def multiple_sliding_windows(images, *args, **kwargs):
 		coordinates.extend(coord)
 		windows.extend(window)
 
+	# Beware, not optimized
 	return np.array(indexes, dtype=int), np.array(coordinates, dtype=int), np.array(windows)
 
-def filter_window_results(indexes, coordinates, predictions, limit):
+def filter_window_results(ids, coordinates, predictions, limit):
 	"""Retrieve faces positive predictions from all predicitions""" 
 	# Keep predictions where face recognition class is higher than limit
 	positive_indices = np.where(predictions[:] > limit)
 
-	single_index = not hasattr(indexes, '__len__')
+	single_index = not hasattr(ids, '__len__')
 	if not single_index:
-		indexes = indexes[positive_indices]
+		ids = ids[positive_indices]
 	positive_predictions = predictions[positive_indices]
 	positive_coordinates = coordinates[positive_indices]
 
@@ -151,8 +180,8 @@ def filter_window_results(indexes, coordinates, predictions, limit):
 		if i not in removed_indices:
 			coord = positive_coordinates[i]
 			score = positive_predictions[i]
-			index = indexes if single_index else indexes[i]
-			face_boxes.append([ index, *coord, score ])
+			img_id = ids if single_index else ids[i]
+			face_boxes.append([ img_id, *coord, score ])
 			for j in sorted_indices:
 				if i != j and area_rate(positive_coordinates[i], positive_coordinates[j]) > 1/2 :
 					removed_indices.append(j)
