@@ -95,7 +95,7 @@ def sliding_windows(img, box_size, step=None, downscale_step=None):
 
 	coordinates = []
 	windows = []
-	for scaled_img in downscale_image(img, step=downscale_step):
+	for scaled_img in downscale_image(img, step=downscale_step, min_height=box_h, min_width=box_l):
 		img_h, img_l = scaled_img.shape[:2]
 
 		r_h = img_h / ini_img_h
@@ -104,11 +104,10 @@ def sliding_windows(img, box_size, step=None, downscale_step=None):
 		for x in range(0, img_h, step_h):
 			for y in range(0, img_l, step_l):
 
-				if x + step_h + box_h < img_h and y + step_l + box_l < img_l:
-					window = scaled_img[x:x+box_h, y:y+box_l]
-
+				if x + box_h < img_h and y + box_l < img_l:
 					# Window is at box_size for classification
 					# but coordinates is not for detections
+					window = scaled_img[x:x+box_h, y:y+box_l]
 					coordinates.append([ x/r_h, y/r_l, box_h/r_h, box_l/r_l ])
 					windows.append(window)
 

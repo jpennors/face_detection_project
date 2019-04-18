@@ -120,7 +120,8 @@ def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	if len(false_positives) > 0:
 		train_labels = np.concatenate([labels, false_positives])
 	else:
-		print(f"!! No false positives given out of {len(predictions)} predictions, add more images")
+		print(f"!! No false positives given out of {len(predictions)} predictions"
+					f", add more images or reduce negatives")
 		train_labels = labels
 	print(f"Adding {len(false_positives)} false positives / {len(predictions)} predictions")
 
@@ -135,15 +136,6 @@ def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	print("Second training...")
 	clf.fit(X, y)
 	return train_labels
-
-def accuracy(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
-	boxes = extract_boxes(images, labels, box_size)
-
-	# Get the training set
-	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
-	y = labels[:,5]
-
-	return clf.score(X, y)
 
 def predict(clf, images, box_size, vectorize, **kwargs):
 	"""
