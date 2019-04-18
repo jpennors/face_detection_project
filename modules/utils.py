@@ -35,11 +35,11 @@ def cover_aera(box_1, box_2):
 	# s: start, e: end
 	xs_1, ys_1, h1, l1 = box_1
 	xs_2, ys_2, h2, l2 = box_2
-	xe_1, ye_1 = xs_1 + h1, ys_1 + h1
-	xe_2, ye_2 = xs_2 + h2, ys_2 + h2
+	xe_1, ye_1 = xs_1 + h1, ys_1 + l1
+	xe_2, ye_2 = xs_2 + h2, ys_2 + l2
 
 	# No aera between
-	if xe_1 < xs_2 or xs_1 > xe_2 or ye_1 < ys_2 or ys_1 > ye_2:
+	if xe_1 < xs_2 or xe_2 < xs_1 or ye_1 < ys_2 or ye_2 < ys_1:
 		return 0
 	xs = max(xs_1, xs_2)
 	xe = min(xe_1, xe_2)
