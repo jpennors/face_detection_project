@@ -1,6 +1,7 @@
 import numpy as np
 from skimage.io import imread
 from skimage.util import img_as_float
+from skimage.color import rgb2gray
 from skimage.transform import resize
 import os
 import pickle
@@ -29,12 +30,13 @@ def save_prediction(predictions, path=PREDICTION_PATH):
 
 # Images
 
-def load_images(path=TRAIN_PATH, limit=None, offset=0):
+def load_images(path=TRAIN_PATH, limit=None, offset=0, gray=False):
 	images = []
 	for index, img_file in enumerate(os.listdir(path)):
 		if limit is not None and index >= limit: 
 			break
-		images.append(img_as_float(imread(path + img_file)))
+		img = img_as_float(imread(path + img_file))
+		images.append(rgb2gray(img) if gray else img)
 	return np.array(images)
 
 # Models

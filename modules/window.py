@@ -119,8 +119,8 @@ def sliding_windows(img, box_size, step=None, downscale_step=None):
 
 	# Allocate space
 	n_results = compute_no_windows(img, box_size, step, downscale_step)
-	coordinates = np.zeros((n_results, 4), dtype=int)
-	windows = np.zeros((n_results, *box_size, 3))
+	coordinates = np.empty((n_results, 4), dtype=int)
+	windows = np.empty((n_results, *box_size, 3))
 
 	index = 0
 	for scaled_img in downscale_image(img, downscale_step, min_h, min_l):

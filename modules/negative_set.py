@@ -36,7 +36,7 @@ def generate_box(img, box_ratio):
 
 	return x, y, h, l
 
-def generate_negative_set(images, labels, set_size=300, save=False):
+def generate_negative_set(images, labels, set_size, save=False):
 	"""
 	@brief      Generate a set of negative labels from images 
 	
@@ -48,7 +48,7 @@ def generate_negative_set(images, labels, set_size=300, save=False):
 	box_ratio = get_box_parameters(labels)[0]
 	n_images = len(images)
 
-	neg_set = []
+	neg_set = np.empty((set_size, 6), dtype=int)
 	while len(neg_set) < set_size :
 		# Generate a fake box in a random image
 		img_index = randrange(n_images)
@@ -64,7 +64,7 @@ def generate_negative_set(images, labels, set_size=300, save=False):
 	if save:
 		save_negative_set(images, np.array(neg_set))
 
-	return np.array(neg_set, dtype=int)
+	return neg_set
 
 
 def save_negative_set(images, negatives):
