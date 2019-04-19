@@ -1,5 +1,7 @@
 from modules import descriptor_vector
 
+VERSION = '2'
+
 # Paths
 LABEL_PATH = 'data/label.txt'
 TRAIN_PATH = 'data/train/'
@@ -7,14 +9,14 @@ TEST_PATH  = 'data/test/'
 PREDICTION_PATH = 'detection.txt'
 MODEL_PATH = 'model.pickle'
 
-PREDICTION_PATH = 'detection1.txt'
-MODEL_PATH = 'model1.pickle'
+PREDICTION_PATH = f'detection{VERSION}.txt'
+MODEL_PATH = f'model{VERSION}.pickle'
 
 # Classifiers
 CLASSIFIER = 'linear_svc'
 CLASSIFIER = 'random_forest'
 MODEL_PARAMS = {
-	'n_estimator': 150,
+	'n_estimators': 200,
 	# 'C': 0.75,
 	# 'max_iter': 10000,
 }

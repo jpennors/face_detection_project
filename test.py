@@ -2,14 +2,14 @@ from modules import data, models
 import numpy as np
 from config import (
 	CLASSIFIER, MODEL_PARAMS, BOX_SIZE, KW_PARAMS,
-	PREDICTION_PATH, MODEL_PATH, GRAY, TEST_LIMIT
+	PREDICTION_PATH, TEST_PATH, MODEL_PATH, GRAY
 )
 
 print("Loading model...")
 clf = data.load_model(path=MODEL_PATH)
 
 print("Loading test images...")
-images = data.load_images('test', limit=TEST_LIMIT, gray=GRAY)
+images = data.load_images(path=TEST_PATH, gray=GRAY)
 
 print("Predicting...")
 predictions = models.predict(clf, images, BOX_SIZE, **KW_PARAMS)
