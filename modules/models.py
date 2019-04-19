@@ -200,6 +200,6 @@ def predict_and_validate(clf, images, box_size, test_labels, vectorize, **kwargs
 
 	X = vectorize(boxes, **kwargs.get('vectorize_kwargs', {}))
 	scores = get_scores(clf, X)
-	results = get_results_from_scores(scores, test_labels, limit_score)
+	results = get_results_from_scores(scores, test_labels, limit_score, return_plt=kwargs.get('return_plt'))
 
 	return scores, results

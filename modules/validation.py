@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 COVER_RATE = 0.5
 
-def get_results_from_scores(scores, test_labels, limit_score, display_info=False):
+def get_results_from_scores(scores, test_labels, limit_score, **kwargs):
 	"""Compute results true/false positive/negative from scores and labels"""
 	y_true = test_labels[:,5] == 1
 	y_pred = scores > limit_score
@@ -20,6 +20,7 @@ def get_results_from_scores(scores, test_labels, limit_score, display_info=False
 	}
 
 	# print(f"Average precision-recall score: {results['avg_precision']:0.2f}")
+	title = kwargs.get('title', 'Precision-Recall curve')
 
 	plt.step(recall, precision, color='b', alpha=0.2, where='post')
 	plt.fill_between(recall, precision, alpha=0.2, color='b')
@@ -28,7 +29,8 @@ def get_results_from_scores(scores, test_labels, limit_score, display_info=False
 	plt.ylabel('Precision')
 	plt.ylim([0.0, 1.05])
 	plt.xlim([0.0, 1.0])
-	plt.title(f"Precision-Recall curve: AP={results['avg_precision']:0.2f}")
+	plt.title(f"{title}: AP={results['avg_precision']:0.2f}")
+	plt.show()
 
 	return results
 

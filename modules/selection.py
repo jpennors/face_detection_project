@@ -111,7 +111,7 @@ def try_classifiers(images, label_sets, global_params, changing_params={}, **kwa
 	# Process each classifier
 	results = {}
 	for clf_name in global_params:
-		print(f"# Trying classifier `{clf_name}`...")
+		print(f"\n# Trying classifier `{clf_name}`...")
 		g_params = global_params[clf_name]
 		c_params = changing_params.get(clf_name)
 
@@ -128,9 +128,9 @@ def try_classifiers(images, label_sets, global_params, changing_params={}, **kwa
 			score, result = models.predict_and_validate(clf, images, box_size, valid_labels, **vectorization_params)
 			results[clf_name] = {
 				'classifier': clf_name,
-				'global_params': global_params,
+				'global_params': g_params,
 				'results': [{
-					'score': score,
+					# 'score': score,
 					'result': result,
 				}],
 			}
