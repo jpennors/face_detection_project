@@ -1,4 +1,4 @@
-from .negative_set import get_box_parameters
+from .negative_set import generate_negative_set
 from .validation import get_results_from_scores, rate_predictions
 from . import models
 import numpy as np
@@ -43,7 +43,7 @@ def try_params(images, label_sets, clf_name, global_params, changing_params, **k
 				model_params = global_params
 				vectorization_params = global_vectorization_params				
 				kw_params = kwargs
-			elif param_name in ('limit_score', 'slide_step', 'downscale_step'):
+			elif param_name in ('limit_score', 'slide_step', 'downscale_step', 'only_one_training'):
 				box_size = global_box_size
 				model_params = global_params
 				vectorization_params = global_vectorization_params
@@ -64,19 +64,16 @@ def try_params(images, label_sets, clf_name, global_params, changing_params, **k
 			clf = models.create_model(clf_name, model_params)
 			models.train(clf, images, box_size, train_labels, **vectorization_params, **kw_params, windows_sets=windows_sets)
 
-			# Predict and validate validation set
-			valid_indexes = np.unique(valid_labels[:,0]) - 1 # Beware ! Indexes not ids
+			# Predict and validate validation set with additional negatives
 			scores, result = models.predict_and_validate(clf, images, box_size, valid_labels,
-																									**vectorization_params, only=valid_indexes,**kwargs)
+																									**vectorization_params,**kwargs)
 
 
+			# valid_indexes = np.unique(valid_labels[:,0]) - 1 # Beware ! Indexes not ids
 			# predictions, score = models.predict(clf, images, box_size, only=valid_indexes, **kw_params,
 			# 												**vectorization_params, with_scores=True, windows_sets=windows_sets)
 			# result = get_results_from_scores(score, valid_labels, LIMIT_SCORE)
 			# result = rate_predictions(predictions, valid_labels)
-
-			# score, result = models.predict_and_validate(clf, images, box_size, valid_labels,
-			# 																						**vectorization_params, windows_sets=windows_sets)
 
 			# Add score to array
 			param_results.append({

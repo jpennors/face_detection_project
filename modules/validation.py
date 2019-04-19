@@ -11,28 +11,34 @@ def get_results_from_scores(scores, test_labels, limit_score, **kwargs):
 	y_pred = scores > limit_score
 
 	precision, recall, _ = precision_recall_curve(y_true, y_pred)
-	results = {
-		'avg_precision': average_precision_score(y_true, y_pred),
+	avg_precision = average_precision_score(y_true, y_pred)
+
+	# print(f"Average precision-recall score: {avg_precision:0.2f}")
+	title = kwargs.get('title', 'Precision-Recall curve')
+
+	# Create curve
+	plt.step(recall, precision, color='b', alpha=0.2, where='post')
+	plt.fill_between(recall, precision, alpha=0.2, color='b')
+	plt.xlabel('Recall')
+	plt.ylabel('Precision')
+	plt.ylim([0.0, 1.05])
+	plt.xlim([0.0, 1.05])
+	plt.title(f"{title}: AP={avg_precision:0.2f}")
+	plt.show()
+
+	return {
+		'avg_precision': avg_precision,
 		'precision': precision,
 		'recall': recall,
 		'f1-score': f1_score(y_true, y_pred),
 		'roc_auc_score': roc_auc_score(y_true, y_pred),
+		'false_pos': sum([ 1 for y_tr, y_pr in zip(y_true, y_pred) if y_tr == False and y_pr == True ]),
+		'false_neg': sum([ 1 for y_tr, y_pr in zip(y_true, y_pred) if y_tr == True and y_pr == False ]),
+		'true_pos': sum([ 1 for y_tr, y_pr in zip(y_true, y_pred) if y_tr == False and y_pr == False ]),
+		'true_neg': sum([ 1 for y_tr, y_pr in zip(y_true, y_pred) if y_tr == True and y_pr == True ]),
+		'n_test': len(scores)
 	}
 
-	# print(f"Average precision-recall score: {results['avg_precision']:0.2f}")
-	title = kwargs.get('title', 'Precision-Recall curve')
-
-	plt.step(recall, precision, color='b', alpha=0.2, where='post')
-	plt.fill_between(recall, precision, alpha=0.2, color='b')
-
-	plt.xlabel('Recall')
-	plt.ylabel('Precision')
-	plt.ylim([0.0, 1.05])
-	plt.xlim([0.0, 1.0])
-	plt.title(f"{title}: AP={results['avg_precision']:0.2f}")
-	plt.show()
-
-	return results
 
 def get_false_positives(predictions, labels, display_info=False):
 	"""
