@@ -36,7 +36,7 @@ def generate_box(img, box_ratio):
 
 	return x, y, h, l
 
-def generate_negative_set(images, labels, set_size, save=False):
+def generate_negative_set(images, labels, set_size=300, save=False):
 	"""
 	@brief      Generate a set of negative labels from images 
 	
@@ -49,7 +49,8 @@ def generate_negative_set(images, labels, set_size, save=False):
 	n_images = len(images)
 
 	neg_set = np.empty((set_size, 6), dtype=int)
-	while len(neg_set) < set_size :
+	index = 0
+	while index < set_size :
 		# Generate a fake box in a random image
 		img_index = randrange(n_images)
 		img_id = img_index + 1
@@ -58,7 +59,8 @@ def generate_negative_set(images, labels, set_size, save=False):
 		# Check if it doesn't overlap with true faces
 		img_labels = labels[labels[:,0] == img_id]
 		if check_no_overlap(img_labels, box):
-			neg_set.append([ img_id, *box, -1 ])
+			neg_set[index] = [ img_id, *box, -1 ]
+			index += 1
 
 	# Save images if true
 	if save:

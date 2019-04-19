@@ -1,4 +1,5 @@
 import numpy as np
+from skimage.transform import resize
 
 try:
 	from tqdm import tqdm
@@ -6,7 +7,9 @@ except ImportError:
 	def tqdm(gen, *args, **kwargs):
 		return gen
 
-		
+def compress_image(img, size):
+	return resize(img, size, mode='constant', anti_aliasing=True)
+
 def get_shape_stats(shapes, display_info=False):
 	"""Compute statistics about image or box shapes [[h, l]]"""
 	h_col = shapes[:,0]

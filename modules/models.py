@@ -93,19 +93,21 @@ def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	@param      images          The images
 	@param      labels          The labels
 	@param      vectorize       The function used to vectorize the extracted boxes of images
-	@param      vectorize_args  Arguments to be passed to the vectorize function
+	@param      vectorize_kwargs  Arguments to be passed to the vectorize function
 															in addition to the boxes
 	@param      negatives       The negatives labels
 	"""
 	# Extract boxes of the images from the labels
-	boxes = extract_boxes(images, labels, box_size)
+	print("Vectorizing data...")
+	boxes = extract_boxes(images, labels)
 
 	# Get the training set
-	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
+	X = vectorize(boxes, **kwargs.get('vectorize_kwargs', {}))
 	y = labels[:,5]
 
 	# First training with only labels and random negatives
 	print("First training...")
+	print(X.shape)
 	clf.fit(X, y)
 
 	if kwargs.get('only_one_training'):
@@ -113,6 +115,7 @@ def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 
 	# Beginning of the second training from the training images
 
+	print("Second training...")
 	train_indexes = np.unique(labels[:,0]) - 1 # Beware ! Indexes not ids
 	predictions = predict(clf, images, box_size, vectorize, only=train_indexes)
 
@@ -126,14 +129,16 @@ def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	print(f"Adding {len(false_positives)} false positives / {len(predictions)} predictions")
 
 	# Extract new boxes of the images from the labels
-	boxes = extract_boxes(images, train_labels, box_size)
+	boxes = extract_boxes(images, train_labels)
 
 	# Get the training set
-	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
+	print("Vectorizing data...")
+	X = vectorize(boxes, **kwargs.get('vectorize_kwargs', {}))
 	y = train_labels[:,5]
 
 	# Finally, train again
-	print("Second training...")
+	print("Fitting...")
+	print(X.shape)
 	clf.fit(X, y)
 	return train_labels
 
@@ -172,7 +177,7 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 
 			# Get the set and predict scores per class
 			coordinates, windows = sliding_windows(image, box_size, slide_step, downscale_step)
-			X = vectorize(windows, *kwargs.get('vectorize_args', []))
+			X = vectorize(windows, **kwargs.get('vectorize_kwargs', {}))
 			scores = get_scores(clf, X)
 
 			prediction = filter_window_results(index+1, coordinates, scores, limit_score)
@@ -195,9 +200,9 @@ def predict_and_validate(clf, images, box_size, test_labels, vectorize, **kwargs
 	@return     The covering boxes with their scores: [[ img_id, x, y, h, l, s ]]
 	"""
 	limit_score = kwargs.get('limit_score', LIMIT_SCORE)
-	boxes = extract_boxes(images, test_labels, box_size)
+	boxes = extract_boxes(images, test_labels)
 
-	X = vectorize(boxes, *kwargs.get('vectorize_args', []))
+	X = vectorize(boxes, **kwargs.get('vectorize_kwargs', {}))
 	scores = get_scores(clf, X)
 	results = get_results_from_scores(scores, test_labels, limit_score)
 

@@ -6,26 +6,24 @@ from math import ceil
 DEFAULT_DOWNSCALE_STEP = 50 # Downscale by 50px
 DEFAULT_SLIDE_STEP = (60, 50)
 
-def extract_boxes(images, labels, box_size):
-	"""
-	Extract all the labels boxes from the images in the same shape
-	"""
+def extract_boxes(images, labels):
+	"""Extract from the images all the labels boxes"""
 	boxes = []
 	current_idx = None
 	current_img = None
+
 	for img_id, x, y, h, l, _ in labels:
 		# Get image if needed
 		if img_id != current_idx:
 			current_idx = img_id
-			# current_img = img_as_float(imread(f"./train/{str(img_id).zfill(4)}.jpg"))
 			current_img = images[img_id - 1]
 
 		# Extract box
-		box = compress_image(current_img[x:x+h, y:y+l], box_size)
-		boxes.append(box)
+		boxes.append(current_img[x:x+h, y:y+l])
 
-	return np.array(boxes)
+	return boxes
 
+# TODO Import from utils
 def compress_image(img, size):
 	return resize(img, size, mode='constant', anti_aliasing=True)
 
@@ -120,7 +118,7 @@ def sliding_windows(img, box_size, step=None, downscale_step=None):
 	# Allocate space
 	n_results = compute_no_windows(img, box_size, step, downscale_step)
 	coordinates = np.empty((n_results, 4), dtype=int)
-	windows = np.empty((n_results, *box_size, 3))
+	windows = np.empty((n_results, *box_size, *img.shape[2:]))
 
 	index = 0
 	for scaled_img in downscale_image(img, downscale_step, min_h, min_l):
