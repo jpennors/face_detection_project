@@ -9,10 +9,13 @@ from .utils import compress_image
 
 DEFAULT_SAMPLE_SIZE = (40, 25)
 DEFAULT_HAAR_FEATURE = 'type-3-x'
-DEFAULT_HAAR_FEATURE_SET = feature.haar_like_feature_coord(
+ft_set = feature.haar_like_feature_coord(
 																*DEFAULT_SAMPLE_SIZE[::-1],
 																feature_type=DEFAULT_HAAR_FEATURE)
 
+BEST_HAAR_INDEXES_PATH = 'haar_best_indexes.txt'
+haar_indexes = np.loadtxt(BEST_HAAR_INDEXES_PATH, dtype=int)
+DEFAULT_HAAR_FEATURE_SET = ft_set[0][haar_indexes], ft_set[1][haar_indexes]
 
 def hog(images, **kwargs):
 	"""Downsample and compute hog for each image"""
@@ -37,17 +40,21 @@ def haar(images, **kwargs):
 	kwargs = kwargs.copy()
 	sample_size = kwargs.pop('sample_size', DEFAULT_SAMPLE_SIZE)
 	params = {
-		'feature_type': kwargs.pop('feature_type', DEFAULT_HAAR_FEATURE_SET[0]),
-		'feature_coord': kwargs.pop('feature_coord', DEFAULT_HAAR_FEATURE_SET[1]),
+		'feature_coord': kwargs.pop('feature_coord', DEFAULT_HAAR_FEATURE_SET[0]),
+		'feature_type': kwargs.pop('feature_type', DEFAULT_HAAR_FEATURE_SET[1]),
 	}
-	first_feat = compute_haar(integral_image(compress_image(images[0], sample_size)), **params)
-	results = np.array((len(images)), n_features)
-	for i, img in images:
+
+	first = compute_haar(integral_image(compress_image(images[0], sample_size)), **params)
+	vectors = np.empty((len(images), *first.shape))
+
+	# Compute each vector
+	for index, img in enumerate(images):
 		if index == 0:
-			results[index] = first_feat
+			vectors[index] = first
 		else:
-			results[index] = compute_haar(integral_image(compress_image(img, sample_size)), **params)
-	return results
+			vectors[index] = compute_haar(integral_image(compress_image(img, sample_size)), **params)
+
+	return vectors
 
 def compute_haar(int_img, **kwargs):
 	return feature.haar_like_feature(int_img, 0, 0, *int_img.shape[::-1], **kwargs)
@@ -57,8 +64,9 @@ def daisy(images, **kwargs):
 	# Get params
 	kwargs = kwargs.copy()
 	sample_size = kwargs.pop('sample_size', DEFAULT_SAMPLE_SIZE)
+	radius = kwargs.pop('radius', 5)
 
-	first = feature.daisy(compress_image(images[0], sample_size), **kwargs)
+	first = feature.daisy(compress_image(images[0], sample_size), radius=radius, **kwargs).ravel()
 	vectors = np.empty((len(images), *first.shape))
 
 	# Compute each vector
@@ -66,7 +74,7 @@ def daisy(images, **kwargs):
 		if index == 0:
 			vectors[index] = first
 		else:
-			vectors[index] = feature.daisy(compress_image(img, sample_size), **kwargs)
+			vectors[index] = feature.daisy(compress_image(img, sample_size), **kwargs).ravel()
 
 	return vectors
 

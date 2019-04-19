@@ -114,7 +114,7 @@ def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 
 	# Beginning of the second training from the training images
 	train_indexes = np.unique(labels[:,0]) - 1 # Beware ! Indexes not ids
-	predictions = predict(clf, images, box_size, vectorize, only=train_indexes)
+	predictions = predict(clf, images, box_size, vectorize, only=train_indexes, **kwargs)
 
 	false_positives = get_false_positives(predictions, labels)
 	if len(false_positives) > 0:
