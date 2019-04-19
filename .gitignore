@@ -1,12 +1,23 @@
 .ipynb_checkpoints/*
 test/*
 project_train/*
-main.ipynb
 Training_image.ipynb
 SY32_P19_Projet_Detection_de_visages.pdf
 *.py[co]
 __pycache__
 modules/__pycache__
+<<<<<<< Updated upstream
 data
 negative_set
 detected/*
+=======
+data/
+negative_set/
+precomputed/
+tests*
+detected*
+*.txt
+!detection.txt
+*.pickle
+!model.pickle
+>>>>>>> Stashed changes

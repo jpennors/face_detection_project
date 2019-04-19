@@ -3,15 +3,14 @@ from modules import data, models
 import numpy as np
 from config import (
 	PREDICTION_PATH, MODEL_PATH, TRAIN_PATH, LABEL_PATH,
-	CLASSIFIER, MODEL_PARAMS, BOX_SIZE, KW_PARAMS,
-	LIMIT, OFFSET, GRAY, NEG_SIZE,
+	CLASSIFIER, MODEL_PARAMS, BOX_SIZE, KW_PARAMS, GRAY, NEG_SIZE
 )
 
 clf = models.create_model(CLASSIFIER, MODEL_PARAMS)
 
 print("Loading data...")
-images = data.load_images(path=TRAIN_PATH, limit=LIMIT, offset=OFFSET, gray=GRAY)
-labels = data.load_labels(path=LABEL_PATH, limit=LIMIT, offset=OFFSET)
+images = data.load_images(path=TRAIN_PATH, gray=GRAY)
+labels = data.load_labels(path=LABEL_PATH)
 
 print("Generating negative set...")
 negatives = generate_negative_set(images, labels, set_size=NEG_SIZE)
