@@ -11,26 +11,28 @@ TRAIN_PATH = 'data/train/'
 TEST_PATH  = 'data/test/'
 PREDICTION_PATH = 'detection.txt'
 MODEL_PATH = 'model.pickle'
+# 										id    x     y     h     l     score
+PREDICTION_FORMATS = ['%d', '%d', '%d', '%d', '%d', '%2.2f']
 
 # Labels
 
 def load_labels(path=LABEL_PATH, limit=None, offset=0):
 	"""Labels are of the following format: [[image_id, x, y, h, l, class]]"""
-	if path == 'test':
-		path = TEST_PATH
 	labels = np.loadtxt(path, dtype=int)
 	if limit:
 		labels = labels[labels[:,0] <= offset + limit]
 		labels = labels[labels[:,0] > offset]
 	return np.append(labels, np.ones((labels.shape[0], 1), dtype=int), axis=1)
 
-def save_prediction(predictions, path=PREDICTION_PATH):
+def save_predictions(predictions, path=PREDICTION_PATH):
 	"""Save predictions in the following format: [[image_id, x, y, h, l, score]]"""
-	return np.savetxt(path, predictions)
+	return np.savetxt(path, predictions, fmt=PREDICTION_FORMATS)
 
 # Images
 
 def load_images(path=TRAIN_PATH, limit=None, offset=0, gray=False):
+	if path == 'test':
+		path = TEST_PATH
 	images = []
 	for index, img_file in enumerate(os.listdir(path)):
 		if limit is not None and index >= limit: 

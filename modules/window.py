@@ -1,7 +1,9 @@
 import numpy as np
 from skimage.transform import resize
+from skimage.io import imsave, imshow, imshow_collection
 from .utils import area_rate, tqdm
 from math import ceil
+import os
 
 DEFAULT_DOWNSCALE_STEP = 50 # Downscale by 50px
 DEFAULT_SLIDE_STEP = (60, 50)
@@ -133,7 +135,7 @@ def sliding_windows(img, box_size, step=None, downscale_step=None):
 					# Window is at box_size for classification
 					# but coordinates is not for detections
 					window = scaled_img[x:x+box_h, y:y+box_l]
-					coordinates[index] = [ x/r_h, y/r_l, box_h/r_h, box_l/r_l ]
+					coordinates[index] = [ int(x/r_h), int(y/r_l), int(box_h/r_h), int(box_l/r_l) ]
 					windows[index] = window
 					index += 1
 
@@ -185,3 +187,42 @@ def filter_window_results(ids, coordinates, predictions, limit):
 					removed_indices.append(j)
 
 	return np.array(face_boxes)
+
+def show_boxes(images, labels, color=(1,0,0), **kwargs):
+	o = int(kwargs.get('width', 4) / 2)
+	path = kwargs.get('path', 'detected/')
+	only = kwargs.get('only')
+	save = kwargs.get('save')
+	display = kwargs.get('display', True)
+
+	if save:
+		if not os.path.exists(path):
+			os.makedirs(path)
+
+	boxed_images = []
+	for index in tqdm(range(len(images)), desc='Processing images'):
+		if only is not None and index not in only:
+			continue
+		img = images[index].copy()
+		img_h, img_l = img.shape[:2]
+		boxes = labels[labels[:,0] == index+1]
+
+		# Print boxes
+		for box in boxes:
+			x, y, h, l = box[1:5]
+			xe, xs = max(0, x - o), min(x + o, img_h)
+			ye, ys = max(0, y - o), min(y + o, img_l)
+
+			img[xe:xs+h,     ye:ys] = color
+			img[xe:xs+h, ye+l:ys+l] = color
+			img[xe:xs,     ye:ys+l] = color
+			img[xe+h:xs+h, ye:ys+l] = color
+
+		if save:
+			imsave(os.path.join(path, f"{index}-{len(boxes)}d.jpg"), img)
+		if display:
+			boxed_images.append(img)
+
+	if display:
+		imshow_collection(boxed_images)
+
