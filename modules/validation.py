@@ -34,8 +34,8 @@ def get_results_from_scores(scores, test_labels, limit_score, **kwargs):
 		'roc_auc_score': roc_auc_score(y_true, y_pred),
 		'false_pos': sum([ 1 for y_tr, y_pr in zip(y_true, y_pred) if y_tr == False and y_pr == True ]),
 		'false_neg': sum([ 1 for y_tr, y_pr in zip(y_true, y_pred) if y_tr == True and y_pr == False ]),
-		'true_pos': sum([ 1 for y_tr, y_pr in zip(y_true, y_pred) if y_tr == False and y_pr == False ]),
-		'true_neg': sum([ 1 for y_tr, y_pr in zip(y_true, y_pred) if y_tr == True and y_pr == True ]),
+		'true_pos': sum([ 1 for y_tr, y_pr in zip(y_true, y_pred) if y_tr == True and y_pr == True ]),
+		'true_neg': sum([ 1 for y_tr, y_pr in zip(y_true, y_pred) if y_tr == False and y_pr == False ]),
 		'n_test': len(scores)
 	}
 
