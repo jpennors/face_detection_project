@@ -35,19 +35,22 @@ def hog(images, **kwargs):
 
 def haar(images, **kwargs):
 	kwargs = kwargs.copy()
+	sample_size = kwargs.pop('sample_size', DEFAULT_SAMPLE_SIZE)
 	params = {
-		'feature_type': kwargs.get('feature_type', DEFAULT_HAAR_FEATURE[0]),
-		'feature_coord': kwargs.get('feature_coord', DEFAULT_HAAR_FEATURE[1]),
+		'feature_type': kwargs.pop('feature_type', DEFAULT_HAAR_FEATURE_SET[0]),
+		'feature_coord': kwargs.pop('feature_coord', DEFAULT_HAAR_FEATURE_SET[1]),
 	}
-	
-	first_feat = compute_haar(integral_image(compress_image(images[0]), **params))
+	first_feat = compute_haar(integral_image(compress_image(images[0], sample_size)), **params)
 	results = np.array((len(images)), n_features)
 	for i, img in images:
 		if index == 0:
 			results[index] = first_feat
 		else:
-			results[index] = compute_haar(integral_image(compress_image(img), **kwargs))
+			results[index] = compute_haar(integral_image(compress_image(img, sample_size)), **params)
 	return results
+
+def compute_haar(int_img, **kwargs):
+	return feature.haar_like_feature(int_img, 0, 0, *int_img.shape[::-1], **kwargs)
 
 def daisy(images, **kwargs):
 	"""Downsample and compute daisy for each image"""
@@ -57,7 +60,6 @@ def daisy(images, **kwargs):
 
 	first = feature.daisy(compress_image(images[0], sample_size), **kwargs)
 	vectors = np.empty((len(images), *first.shape))
-	print(vectors.shape)
 
 	# Compute each vector
 	for index, img in enumerate(images):
@@ -67,37 +69,4 @@ def daisy(images, **kwargs):
 			vectors[index] = feature.daisy(compress_image(img, sample_size), **kwargs)
 
 	return vectors
-	
 
-def compute_haar(int_img, feature_type, **kwargs):
-	return feature.haar_like_feature(int_img , 0, 0, *int_img.shape[:2], **kwargs)
-
-
-def compute_integral_images(images):
-	"""Compute integral images for a set of images"""
-	return np.array([ integral_image(img) for img in images ])
-
-
-def haarold(int_images, feature_type=None, **kwargs):
-	"""Extract the haar feature for the current image"""
-	if feature_type is None:
-		feature_type = DEFAULT_HAAR_FEATURE
-
-	first_feat = compute_haar(int_img, feature_type=feature_type, **kwargs)
-	results = np.array((len(int_images)), n_features)
-	for index, int_img in enumerate(int_images):
-		if index == 0:
-			results[index] = first_feat
-		else:
-			results[index] = compute_haar(int_img, feature_type=feature_type, **kwargs)
-	return results
-
-
-def flatten(images):
-	return np.array([ img.ravel() for img in images ])
-
-def gray_flatten(images):
-	return np.array([ rgb2gray(img).ravel() for img in images ])
-
-def daisy(images):
-	return np.array([ feature.daisy(rgb2gray(img)) for img in images ])

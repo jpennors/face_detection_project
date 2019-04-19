@@ -66,10 +66,14 @@ def try_params(images, label_sets, clf_name, global_params, changing_params, **k
 
 			# Predict and validate validation set
 			valid_indexes = np.unique(valid_labels[:,0]) - 1 # Beware ! Indexes not ids
-			predictions, score = models.predict(clf, images, box_size, only=valid_indexes, **kw_params,
-															**vectorization_params, with_scores=True, windows_sets=windows_sets)
+			scores, result = models.predict_and_validate(clf, images, box_size, valid_labels,
+																									**vectorization_params, only=valid_indexes,**kwargs)
+
+
+			# predictions, score = models.predict(clf, images, box_size, only=valid_indexes, **kw_params,
+			# 												**vectorization_params, with_scores=True, windows_sets=windows_sets)
 			# result = get_results_from_scores(score, valid_labels, LIMIT_SCORE)
-			result = rate_predictions(predictions, valid_labels)
+			# result = rate_predictions(predictions, valid_labels)
 
 			# score, result = models.predict_and_validate(clf, images, box_size, valid_labels,
 			# 																						**vectorization_params, windows_sets=windows_sets)

@@ -106,7 +106,7 @@ def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	y = labels[:,5]
 
 	# First training with only labels and random negatives
-	print(f"First training with {len(X)} rows...")
+	print(f"First training with {X.shape} rows...")
 	clf.fit(X, y)
 
 	if kwargs.get('only_one_training'):
@@ -134,7 +134,7 @@ def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	y = train_labels[:,5]
 
 	# Finally, train again
-	print(f"Second training with {len(X)} rows...")
+	print(f"Second training with {X.shape} rows...")
 	clf.fit(X, y)
 	return train_labels
 
