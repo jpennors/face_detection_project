@@ -1,39 +1,34 @@
 import numpy as np
 from .utils import area_rate
+from sklearn.metrics import precision_recall_curve, average_precision_score, f1_score, roc_auc_score
+import matplotlib.pyplot as plt
 
 COVER_RATE = 0.5
 
 def get_results_from_scores(scores, test_labels, limit_score, display_info=False):
 	"""Compute results true/false positive/negative from scores and labels"""
+	y_true = test_labels[:,5] == 1
+	y_pred = scores > limit_score
+
+	precision, recall, _ = precision_recall_curve(y_true, y_pred)
 	results = {
-		'true_pos': 0,
-		'true_neg': 0,
-		'false_pos': 0,
-		'false_neg': 0,
+		'avg_precision': average_precision_score(y_true, y_pred),
+		'precision': precision,
+		'recall': recall,
+		'f1-score': f1_score(y_true, y_pred),
+		'roc_auc_score': roc_auc_score(y_true, y_pred),
 	}
 
-	# Compute results
-	for index, score in enumerate(scores):
-		pred_pos = score > limit_score
-		test_pos = test_labels[index,5] == 1
+	# print(f"Average precision-recall score: {results['avg_precision']:0.2f}")
 
-		if pred_pos:
-			results['true_pos' if test_pos else 'false_pos'] += 1
-		else:
-			results['false_neg' if test_pos else 'true_neg'] += 1
+	plt.step(recall, precision, color='b', alpha=0.2, where='post')
+	plt.fill_between(recall, precision, alpha=0.2, color='b')
 
-	# Compute precision and recall
-	try:
-		precision = results['true_pos'] / (results['true_pos'] + results['false_pos'])
-		recall = results['true_pos'] / (results['true_pos'] + results['false_neg'])
-		results['f-score'] = 2 * (precision * recall) / (precision + recall)
-		results['precision'] = precision
-		results['recall'] = recall
-	except ZeroDivisionError:
-		pass
-
-	if display_info:
-		print("Prediction results:", results)
+	plt.xlabel('Recall')
+	plt.ylabel('Precision')
+	plt.ylim([0.0, 1.05])
+	plt.xlim([0.0, 1.0])
+	plt.title(f"Precision-Recall curve: AP={results['avg_precision']:0.2f}")
 
 	return results
 
@@ -98,3 +93,56 @@ def rate_predictions(predictions, labels):
 			results['true_pos' if correct_face else 'false_pos'] += 1
 
 	return results
+
+def pr_curve(labels, predictions, scores=None):
+	labels = labels[labels[:,5] == 1]
+	img_ids = np.unique(labels[:,0])
+	# predictions = predictions[np.argsort(scores)[::-1]]
+
+	precision, recall = [], []
+	results = {
+		'true_pos': 0,
+		'false_pos': 0,
+		'false_neg': 0,
+	}
+	def update_pr():
+		if results['true_pos'] + results['false_pos'] == 0:
+			precision.append(0)
+		else:
+			precision.append(results['true_pos'] / (results['true_pos'] + results['false_pos']))
+		if results['true_pos'] + results['false_neg'] == 0:
+			recall.append(0)
+		else:
+			recall.append(results['true_pos'] / (results['true_pos'] + results['false_neg']))
+
+
+	# Check every labelled image
+	for img_id in img_ids:
+		# TODO Optimize from 2n² to 2n
+		img_labels = labels[labels[:,0] == img_id]
+		img_predictions = predictions[predictions[:,0] == img_id]
+
+		# Add missing predictions
+		label_pred_diff = len(img_labels) - len(img_predictions)
+		if label_pred_diff > 0:
+			for _ in range(label_pred_diff):
+				results['false_neg'] += 1
+				update_pr()
+
+		# Check positive predictions
+		for prediction in img_predictions:
+			# Check if the prediction covers a true face
+			correct_face = any([ area_rate(label[1:5], prediction[1:5]) > COVER_RATE
+											 for label in img_labels ])
+			results['true_pos' if correct_face else 'false_pos'] += 1
+			update_pr()
+
+	plt.step(recall, precision, color='b', alpha=0.2, where='post')
+	plt.fill_between(recall, precision, alpha=0.2, color='b')
+
+	plt.xlabel('Recall')
+	plt.ylabel('Precision')
+	plt.ylim([0.0, 1.05])
+	plt.xlim([0.0, 1.05])
+	# plt.title('2-class Precision-Recall curve: AP={0:0.2f}'.format(average_precision))
+	# auc_full_features = roc_auc_score(y_test, clf.predict_proba(X_test)[:, 1])

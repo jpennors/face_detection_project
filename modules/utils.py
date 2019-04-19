@@ -2,7 +2,7 @@ import numpy as np
 from skimage.transform import resize
 
 try:
-	from tqdm import tqdm
+	from tqdm.auto import tqdm
 except ImportError:
 	def tqdm(gen, *args, **kwargs):
 		return gen

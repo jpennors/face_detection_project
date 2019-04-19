@@ -15,11 +15,11 @@ DEFAULT_HAAR_FEATURE_SET = feature.haar_like_feature_coord(
 
 
 def hog(images, **kwargs):
+	"""Downsample and compute hog for each image"""
 	# Get params
 	kwargs = kwargs.copy()
 	block_norm = kwargs.pop('block_norm', 'L2')
 	sample_size = kwargs.pop('sample_size', DEFAULT_SAMPLE_SIZE)
-	sample_h, sample_l = sample_size
 
 	first = feature.hog(compress_image(images[0], sample_size), block_norm=block_norm, **kwargs)
 	vectors = np.empty((len(images), *first.shape))
@@ -27,10 +27,9 @@ def hog(images, **kwargs):
 	# Compute each vector
 	for index, img in enumerate(images):
 		if index == 0:
-			vector = first
+			vectors[index] = first
 		else:
-			vector = feature.hog(compress_image(img, sample_size), block_norm=block_norm, **kwargs)
-		vectors[index] = vector
+			vectors[index] = feature.hog(compress_image(img, sample_size), block_norm=block_norm, **kwargs)
 
 	return vectors
 
@@ -50,6 +49,25 @@ def haar(images, **kwargs):
 			results[index] = compute_haar(integral_image(compress_image(img), **kwargs))
 	return results
 
+def daisy(images, **kwargs):
+	"""Downsample and compute daisy for each image"""
+	# Get params
+	kwargs = kwargs.copy()
+	sample_size = kwargs.pop('sample_size', DEFAULT_SAMPLE_SIZE)
+
+	first = feature.daisy(compress_image(images[0], sample_size), **kwargs)
+	vectors = np.empty((len(images), *first.shape))
+	print(vectors.shape)
+
+	# Compute each vector
+	for index, img in enumerate(images):
+		if index == 0:
+			vectors[index] = first
+		else:
+			vectors[index] = feature.daisy(compress_image(img, sample_size), **kwargs)
+
+	return vectors
+	
 
 def compute_haar(int_img, feature_type, **kwargs):
 	return feature.haar_like_feature(int_img , 0, 0, *int_img.shape[:2], **kwargs)

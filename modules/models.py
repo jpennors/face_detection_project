@@ -106,16 +106,13 @@ def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	y = labels[:,5]
 
 	# First training with only labels and random negatives
-	print("First training...")
-	print(X.shape)
+	print(f"First training with {len(X)} rows...")
 	clf.fit(X, y)
 
 	if kwargs.get('only_one_training'):
 		return None
 
 	# Beginning of the second training from the training images
-
-	print("Second training...")
 	train_indexes = np.unique(labels[:,0]) - 1 # Beware ! Indexes not ids
 	predictions = predict(clf, images, box_size, vectorize, only=train_indexes)
 
@@ -137,8 +134,7 @@ def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	y = train_labels[:,5]
 
 	# Finally, train again
-	print("Fitting...")
-	print(X.shape)
+	print(f"Second training with {len(X)} rows...")
 	clf.fit(X, y)
 	return train_labels
 
@@ -184,7 +180,7 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 			predictions.extend(prediction)
 
 	if kwargs.get('with_scores'):
-		return np.array(predictions), scores
+		return np.array(predictions), np.array(scores)
 	return np.array(predictions)
 
 def predict_and_validate(clf, images, box_size, test_labels, vectorize, **kwargs):
