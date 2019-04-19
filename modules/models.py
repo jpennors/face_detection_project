@@ -9,7 +9,7 @@ import numpy as np
 from .negative_set import get_box_parameters
 from .window import extract_boxes, sliding_windows, filter_window_results
 from .validation import get_false_positives, get_results_from_scores
-from .utils import tqdm
+from .utils import tqdm, area_rate
 
 
 LIMIT_SCORE = 0.5
@@ -138,7 +138,7 @@ def train(clf, images, box_size, labels, vectorize, negatives=None, **kwargs):
 	clf.fit(X, y)
 	return train_labels
 
-def predict(clf, images, box_size, vectorize, **kwargs):
+def predict(clf, images, box_size, vectorize, filter=False, **kwargs):
 	"""
 	@brief      Find faces on the images
 	
@@ -178,6 +178,24 @@ def predict(clf, images, box_size, vectorize, **kwargs):
 
 			prediction = filter_window_results(index+1, coordinates, scores, limit_score)
 			predictions.extend(prediction)
+
+	if filter:
+		predictions = np.array(predictions)
+		sorted_predictions_indexes = np.argsort(predictions[:,5])[::-1]
+		# Check area rate between predictions
+		indexes_to_remove = []
+
+		for current_index in sorted_predictions_indexes:
+			for test_index in sorted_predictions_indexes:
+				if current_index != test_index and predictions[current_index][5] > predictions[test_index][5] and predictions[current_index][0] == predictions[test_index][0]:
+					if(area_rate(predictions[current_index][1:5], predictions[test_index][1:5]) > 1/2):
+						indexes_to_remove.append(test_index)
+						sorted_predictions_indexes[sorted_predictions_indexes!= current_index]
+
+		predictions = np.delete(predictions, indexes_to_remove, axis=0)
+		# for index in indexes_to_remove:
+			# predictions = np.delete(predictions, index, axis=0)
+		# predictions = predictions[predictions[:,0] != indexes_to_remove]
 
 	if kwargs.get('with_scores'):
 		return np.array(predictions), np.array(scores)

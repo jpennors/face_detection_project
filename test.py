@@ -12,7 +12,7 @@ print("Loading test images...")
 images = data.load_images(path=TEST_PATH, gray=GRAY)
 
 print("Predicting...")
-predictions = models.predict(clf, images, BOX_SIZE, **KW_PARAMS)
+predictions = models.predict(clf, images, BOX_SIZE, filter=True, **KW_PARAMS)
 
 print("Saving predictions...")
 data.save_predictions(predictions, path=PREDICTION_PATH)
